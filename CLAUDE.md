@@ -22,6 +22,7 @@ Source of truth: [docs/SPEC.md](docs/SPEC.md). If the spec and official docs dis
 - Prisma 7: config in `prisma.config.ts`, client generated to `generated/prisma` (gitignored), driver adapter `@prisma/adapter-pg`. Import from `@/generated/prisma/client`. pgvector columns are `Unsupported("vector(768)")`, accessed via raw SQL.
 - State changes for orders/commissions go **only** through `lib/state/order.ts` / `lib/state/commission.ts`. `transition()` returns `applied | noop | rejected`; only `applied` performs side effects (this is how webhook + sync paths converge).
 - Quota-costing calls go through `lib/budget.ts` `consume()` first.
+- Dev DB is Neon (free). DATABASE_URL may be the pooled URL; prisma.config.ts derives the direct URL for migrations (or set DIRECT_DATABASE_URL).
 - Shell: Windows. The project folder name has spaces, so quote paths.
 
 ## Commands
@@ -38,7 +39,7 @@ npm run typecheck && npm run lint
 
 ## Phase checklist
 
-- [x] **1. Skeleton & money core.** (seed verified against Neon: pending) Next.js, Tailwind, shadcn, Prisma + pgvector, flags, budget guard, money, state machines + tests, seed, .env.example.
+- [x] **1. Skeleton & money core.** Next.js, Tailwind, shadcn, Prisma + pgvector, flags, budget guard, money, state machines + tests, seed, .env.example.
 - [ ] **2. PayPal end-to-end.** Typed client (token cache, idempotency), orders create/capture, checkout drawer (JS SDK v6), refunds, commission ledger, Payouts + status, verified idempotent webhooks, audit timeline, minimal earnings + Pay me now.
 - [ ] **3. Vision pipeline.** Client frame capture (upload + screen), dHash filter, Gemini structured output, Ollama/Claude adapters, tracker/stabilization, demo cache, budget degradation.
 - [ ] **4. Matching & live rail.** Elastic hybrid (+ Postgres fallback), Channel3 similar + price compare, SSE rail, viewer page, attribution.
