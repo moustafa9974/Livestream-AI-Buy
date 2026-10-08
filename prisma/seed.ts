@@ -12,6 +12,7 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, type Prisma } from "../generated/prisma/client";
 import { commissionMinor, sumMinor } from "../lib/money";
+import { importDemoCache } from "../scripts/demo-cache";
 import { merchants, products } from "./catalog";
 
 const prisma = new PrismaClient({
@@ -269,6 +270,7 @@ async function main() {
   await seedCreatorAndStreams(now);
   await seedPastDetections();
   await seedSales(now);
+  const cachedFrames = await importDemoCache(prisma);
 
   const counts = {
     merchants: await prisma.merchant.count(),
@@ -278,7 +280,7 @@ async function main() {
     orders: await prisma.order.count(),
     commissions: await prisma.commission.count(),
   };
-  console.log("Seeded demo data:", counts);
+  console.log("Seeded demo data:", { ...counts, demoCacheFrames: cachedFrames });
 }
 
 main()

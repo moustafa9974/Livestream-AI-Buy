@@ -17,10 +17,14 @@
     "db:seed": "prisma db seed",
     "demo:reset": "prisma migrate deploy && prisma db seed",
     "postinstall": "prisma generate",
-    "test:db": "vitest run --config vitest.db.config.mts"
+    "test:db": "vitest run --config vitest.db.config.mts",
+    "demo:cache:export": "tsx scripts/demo-cache.ts export",
+    "demo:cache:import": "tsx scripts/demo-cache.ts import"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.1",
     "@base-ui/react": "^1.8.0",
+    "@google/genai": "^2.28.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "class-variance-authority": "^0.7.1",

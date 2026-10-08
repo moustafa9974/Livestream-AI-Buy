@@ -44,15 +44,24 @@ const schema = z.object({
   EMBEDDING_DIM: int(768),
   GEMINI_MAX_RPM: int(8),
   GEMINI_MAX_RPD: int(800),
-  OLLAMA_BASE_URL: z.string().default("http://localhost:11434"),
+  GEMINI_EMBED_MAX_RPM: int(60),
+  GEMINI_EMBED_MAX_RPD: int(900),
+  // "" disables the thinking config (for models that don't support thinking levels).
+  GEMINI_THINKING_LEVEL: z.enum(["", "MINIMAL", "LOW", "MEDIUM", "HIGH"]).default("LOW"),
+  VISION_TIMEOUT_MS: int(20_000),
+  OLLAMA_BASE_URL: z.string().default("http://127.0.0.1:11434"),
   OLLAMA_VISION_MODEL: z.string().default("qwen2.5vl:7b"),
   ANTHROPIC_API_KEY: str,
-  CLAUDE_VISION_MODEL: z.string().default("claude-haiku-5-5"),
+  CLAUDE_VISION_MODEL: z.string().default("claude-opus-5-5"),
 
   // Vision pipeline tuning
   FRAME_INTERVAL_SEC: int(4),
   DHASH_MIN_DISTANCE: int(10),
   MAX_STALE_SECONDS: int(20),
+  // DEMO_CACHE: reuse a cached frame result when the dHash is within this distance.
+  DEMO_CACHE_MAX_DISTANCE: int(10),
+  DETECTION_MIN_CONFIDENCE: z.coerce.number().min(0).max(1).default(0.55),
+  MAX_VISIBLE_PRODUCTS: int(12),
 
   // Sponsors
   CHANNEL3_ENABLED: bool(true),

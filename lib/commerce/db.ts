@@ -16,14 +16,14 @@ export function isUniqueViolation(err: unknown): boolean {
  */
 export async function lockRow(
   tx: Prisma.TransactionClient,
-  table: "Order" | "Creator" | "PayoutBatch",
+  table: "Order" | "Creator" | "PayoutBatch" | "Stream",
   id: string,
 ): Promise<void> {
   await tx.$queryRawUnsafe(`SELECT 1 FROM "${table}" WHERE id = $1 FOR UPDATE`, id);
 }
 
 export interface AuditInput {
-  entityType: "Order" | "Commission" | "PayoutBatch" | "Refund" | "WebhookEvent" | "Attribution";
+  entityType: "Order" | "Commission" | "PayoutBatch" | "Refund" | "WebhookEvent" | "Attribution" | "Detection" | "Stream";
   entityId: string;
   type: string;
   source: AuditSource;

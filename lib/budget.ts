@@ -6,7 +6,7 @@ import { getEnv, type Env } from "./env";
  *   normal → saver (≥ SAVER_AT of any limit: slow down) → cache_only (limit hit: no new calls)
  */
 
-export type Provider = "gemini" | "channel3" | "kernel_sessions" | "kernel_minutes";
+export type Provider = "gemini" | "gemini_embed" | "channel3" | "kernel_sessions" | "kernel_minutes";
 export type BudgetMode = "normal" | "saver" | "cache_only";
 
 export interface Limits {
@@ -32,6 +32,8 @@ export function limitsFor(provider: Provider, env: Env = getEnv()): Limits {
   switch (provider) {
     case "gemini":
       return { perMinute: env.GEMINI_MAX_RPM, perDay: env.GEMINI_MAX_RPD };
+    case "gemini_embed":
+      return { perMinute: env.GEMINI_EMBED_MAX_RPM, perDay: env.GEMINI_EMBED_MAX_RPD };
     case "channel3":
       return { perDay: env.CHANNEL3_MAX_CALLS_PER_DAY };
     case "kernel_sessions":
