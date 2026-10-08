@@ -223,6 +223,25 @@ model Order {
   viewerSession ViewerSession @relation(fields: [viewerSessionId], references: [id])
   attribution   Attribution?  @relation(fields: [attributionId], references: [id])
   commissions   Commission[]
+  refunds       Refund[]
+}
+
+// One row per PayPal refund. The unique paypalRefundId is what stops the sync refund
+// path and the PAYMENT.CAPTURE.REFUNDED webhook from counting the same refund twice.
+// Not in the original spec model list.
+model Refund {
+  id             String   @id @default(cuid())
+  orderId        String
+  paypalRefundId String   @unique
+  amountMinor    Int
+  currency       String
+  status         String // PayPal refund status verbatim: COMPLETED | PENDING | FAILED | CANCELLED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
 }
 
 // ───────────── Commissions & payouts ─────────────

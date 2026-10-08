@@ -31,6 +31,9 @@ const schema = z.object({
   PAYPAL_CLIENT_SECRET: str,
   PAYPAL_WEBHOOK_ID: str,
   PAYPAL_AGENT_TOOLKIT_ENABLED: bool(true),
+  PAYPAL_TIMEOUT_MS: int(15_000),
+  CHECKOUT_SHIPPING_PREFERENCE: z.enum(["GET_FROM_FILE", "NO_SHIPPING"]).default("GET_FROM_FILE"),
+  DEMO_CREATOR_PAYOUT_EMAIL: str,
 
   // AI
   AI_PROVIDER: z.enum(["gemini", "ollama", "claude"]).default("gemini"),

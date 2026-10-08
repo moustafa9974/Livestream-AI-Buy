@@ -33,6 +33,7 @@ async function wipe() {
     prisma.webhookEvent.deleteMany(),
     prisma.commission.deleteMany(),
     prisma.payoutBatch.deleteMany(),
+    prisma.refund.deleteMany(),
     prisma.order.deleteMany(),
     prisma.attribution.deleteMany(),
     prisma.productMatch.deleteMany(),
@@ -71,9 +72,9 @@ async function seedCreatorAndStreams(now: Date) {
       id: CREATOR_ID,
       slug: "maya-makes",
       displayName: "Maya Makes",
-      // Placeholder: replace with your sandbox *personal* account email in the demo panel
-      // or directly in the DB. Real address never goes in git.
-      payoutEmail: "creator-sandbox@example.com",
+      // Sandbox personal account that receives "Pay me now" payouts. Comes from .env so
+      // each developer uses their own sandbox account.
+      payoutEmail: process.env.DEMO_CREATOR_PAYOUT_EMAIL || "creator-sandbox@example.com",
       payoutCurrency: "USD",
       commissionRateBps: RATE_BPS,
       language: "en",
@@ -233,6 +234,16 @@ async function seedSales(now: Date) {
       { entityType: "Commission", entityId: commission.id, type: "commission.created", source: "system", payload: { amountMinor: amount, rateBps: RATE_BPS }, createdAt },
     );
     if (refunded) {
+      await prisma.refund.create({
+        data: {
+          id: `seed_refund_${s.key}`,
+          orderId: order.id,
+          paypalRefundId: `SEED-REFUND-${s.key}`,
+          amountMinor: total,
+          currency: "USD",
+          status: "COMPLETED",
+        },
+      });
       audit.push(
         { entityType: "Order", entityId: order.id, type: "order.refunded", source: "creator", payload: { refundedMinor: total }, createdAt: new Date(createdAt.getTime() + HOUR) },
         { entityType: "Commission", entityId: commission.id, type: "commission.reversed", source: "system", payload: { reversedMinor: amount }, createdAt: new Date(createdAt.getTime() + HOUR) },
