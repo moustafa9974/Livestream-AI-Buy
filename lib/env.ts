@@ -1,0 +1,90 @@
+import { z } from "zod";
+
+/**
+ * Typed server env. Every sponsor key is optional: a missing key turns the feature
+ * off (see lib/flags.ts) instead of crashing the app. Only DATABASE_URL is required.
+ */
+
+const bool = (def: boolean) =>
+  z
+    .enum(["true", "false", "1", "0", ""])
+    .optional()
+    .transform((v) => (v === undefined || v === "" ? def : v === "true" || v === "1"));
+
+const int = (def: number) => z.coerce.number().int().nonnegative().default(def);
+const str = z.string().trim().min(1).optional().catch(undefined);
+
+const schema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  APP_URL: z.string().url().default("http://localhost:3000"),
+  DATABASE_URL: z.string().min(1),
+
+  DEMO_MODE: bool(true),
+  DEMO_CACHE: bool(true),
+  COMMISSION_HOLD_HOURS: int(0),
+  DEFAULT_COMMISSION_BPS: int(1000),
+
+  // PayPal (sandbox)
+  PAYPAL_ENABLED: bool(true),
+  PAYPAL_ENV: z.enum(["sandbox", "live"]).default("sandbox"),
+  PAYPAL_CLIENT_ID: str,
+  PAYPAL_CLIENT_SECRET: str,
+  PAYPAL_WEBHOOK_ID: str,
+  PAYPAL_AGENT_TOOLKIT_ENABLED: bool(true),
+
+  // AI
+  AI_PROVIDER: z.enum(["gemini", "ollama", "claude"]).default("gemini"),
+  GEMINI_API_KEY: str,
+  GEMINI_VISION_MODEL: z.string().default("gemini-3.8-flash"),
+  GEMINI_TEXT_MODEL: z.string().default("gemini-3.5-flash-lite"),
+  GEMINI_EMBEDDING_MODEL: z.string().default("gemini-embedding-001"),
+  EMBEDDING_DIM: int(768),
+  GEMINI_MAX_RPM: int(8),
+  GEMINI_MAX_RPD: int(800),
+  OLLAMA_BASE_URL: z.string().default("http://localhost:11434"),
+  OLLAMA_VISION_MODEL: z.string().default("qwen2.5vl:7b"),
+  ANTHROPIC_API_KEY: str,
+  CLAUDE_VISION_MODEL: z.string().default("claude-haiku-5-5"),
+
+  // Vision pipeline tuning
+  FRAME_INTERVAL_SEC: int(4),
+  DHASH_MIN_DISTANCE: int(10),
+  MAX_STALE_SECONDS: int(20),
+
+  // Sponsors
+  CHANNEL3_ENABLED: bool(true),
+  CHANNEL3_API_KEY: str,
+  CHANNEL3_MAX_CALLS_PER_DAY: int(300),
+  KERNEL_ENABLED: bool(false),
+  KERNEL_API_KEY: str,
+  KERNEL_MAX_SESSION_MINUTES: int(10),
+  KERNEL_MAX_SESSIONS_PER_DAY: int(3),
+  ELASTIC_ENABLED: bool(false),
+  ELASTIC_URL: str,
+  ELASTIC_API_KEY: str,
+  WATCHER_RUNTIME: z.enum(["local", "astropods"]).default("local"),
+  ASTROPODS_API_KEY: str,
+  ZAPIER_ENABLED: bool(false),
+  BRYNTUM_ENABLED: bool(false),
+  AUDIO_CONTEXT: bool(false),
+});
+
+export type Env = z.infer<typeof schema>;
+
+let cached: Env | undefined;
+
+export function getEnv(source: Record<string, string | undefined> = process.env): Env {
+  if (source === process.env && cached) return cached;
+  const parsed = schema.safeParse(source);
+  if (!parsed.success) {
+    // Print variable names only. Values may be secrets.
+    const names = parsed.error.issues.map((i) => i.path.join(".")).join(", ");
+    throw new Error(`Invalid environment configuration: ${names}`);
+  }
+  if (source === process.env) cached = parsed.data;
+  return parsed.data;
+}
+
+export function resetEnvCache(): void {
+  cached = undefined;
+}

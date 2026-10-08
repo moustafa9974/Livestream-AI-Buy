@@ -1,0 +1,331 @@
+// Seen data model. Money is always integer minor units (Int) + ISO currency code.
+// Embedding columns use pgvector via Unsupported(); they are read/written with raw SQL
+// in lib/search, never through generated Prisma types.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────── Creators & streams ─────────────
+
+model Creator {
+  id                String    @id @default(cuid())
+  slug              String    @unique
+  displayName       String
+  avatarUrl         String?
+  payoutEmail       String // sandbox personal account email
+  payoutCurrency    String    @default("USD")
+  commissionRateBps Int       @default(1000) // 1000 = 10%
+  language          String    @default("en")
+  zapierWebhookUrl  String?
+  createdAt         DateTime  @default(now())
+
+  streams     Stream[]
+  commissions Commission[]
+}
+
+enum StreamSourceType {
+  upload
+  screen
+  youtube
+  kernel_url
+}
+
+enum StreamStatus {
+  idle
+  live
+  ended
+}
+
+model Stream {
+  id                  String           @id @default(cuid())
+  creatorId           String
+  title               String
+  sourceType          StreamSourceType
+  sourceUrl           String?
+  videoAssetUrl       String?
+  status              StreamStatus     @default(idle)
+  consentOwnContent   Boolean          @default(false)
+  consentAt           DateTime?
+  startedAt           DateTime?
+  endedAt             DateTime?
+  frameIntervalSec    Int              @default(4)
+  createdAt           DateTime         @default(now())
+
+  creator      Creator       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  frames       Frame[]
+  detections   Detection[]
+  attributions Attribution[]
+
+  @@index([creatorId])
+}
+
+model Frame {
+  id        String   @id @default(cuid())
+  streamId  String
+  tsSec     Float
+  dHash     String // 64-bit dHash as 16 hex chars
+  imageUrl  String?
+  processed Boolean  @default(false)
+  provider  String?
+  latencyMs Int?
+  createdAt DateTime @default(now())
+
+  stream Stream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@index([streamId, processed])
+}
+
+enum DetectionState {
+  candidate
+  visible
+  pinned
+  hidden
+}
+
+model Detection {
+  id               String                       @id @default(cuid())
+  streamId         String
+  label            String
+  category         String
+  attributes       Json                         @default("{}")
+  embedding        Unsupported("vector(768)")?
+  bestFrameId      String?
+  bbox             Json? // [x, y, w, h] normalized 0–1
+  confidence       Float
+  hits             Int                          @default(1)
+  firstSeenSec     Float
+  lastSeenSec      Float
+  state            DetectionState               @default(candidate)
+  mentionedInAudio Boolean                      @default(false)
+  createdAt        DateTime                     @default(now())
+
+  stream       Stream         @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  matches      ProductMatch[]
+  attributions Attribution[]
+
+  @@index([streamId, state])
+}
+
+enum MatchSource {
+  partner
+  channel3
+}
+
+enum MatchKind {
+  exact
+  similar
+}
+
+model ProductMatch {
+  id               String      @id @default(cuid())
+  detectionId      String
+  source           MatchSource
+  partnerProductId String?
+  externalRef      Json? // channel3: { title, priceMinor, currency, retailer, url, image }
+  score            Float
+  kind             MatchKind
+  createdAt        DateTime    @default(now())
+
+  detection      Detection       @relation(fields: [detectionId], references: [id], onDelete: Cascade)
+  partnerProduct PartnerProduct? @relation(fields: [partnerProductId], references: [id])
+
+  @@index([detectionId])
+}
+
+// ───────────── Catalog ─────────────
+
+model Merchant {
+  id       String           @id @default(cuid())
+  name     String
+  logoUrl  String?
+  products PartnerProduct[]
+}
+
+model PartnerProduct {
+  id          String                      @id @default(cuid())
+  merchantId  String
+  title       String
+  description String
+  category    String
+  images      String[]
+  priceMinor  Int
+  currency    String                      @default("USD")
+  attributes  Json                        @default("{}")
+  stock       Int                         @default(0)
+  embedding   Unsupported("vector(768)")?
+  createdAt   DateTime                    @default(now())
+
+  merchant     Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  matches      ProductMatch[]
+  attributions Attribution[]
+}
+
+// ───────────── Viewers, attribution, orders ─────────────
+
+model ViewerSession {
+  id           String        @id @default(cuid())
+  anonId       String        @unique // value of the anonymous cookie
+  locale       String        @default("en")
+  createdAt    DateTime      @default(now())
+  attributions Attribution[]
+  orders       Order[]
+}
+
+model Attribution {
+  id               String   @id @default(cuid())
+  streamId         String
+  detectionId      String?
+  partnerProductId String
+  viewerSessionId  String
+  tsSec            Float
+  createdAt        DateTime @default(now())
+
+  stream         Stream         @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  detection      Detection?     @relation(fields: [detectionId], references: [id], onDelete: SetNull)
+  partnerProduct PartnerProduct @relation(fields: [partnerProductId], references: [id])
+  viewerSession  ViewerSession  @relation(fields: [viewerSessionId], references: [id])
+  orders         Order[]
+
+  @@index([streamId])
+}
+
+enum OrderStatus {
+  CREATED
+  APPROVED
+  CAPTURED
+  PARTIALLY_REFUNDED
+  REFUNDED
+  FAILED
+  CANCELLED
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  viewerSessionId String
+  attributionId   String?
+  items           Json // snapshot: [{ partnerProductId, title, unitMinor, quantity }]
+  subtotalMinor   Int
+  totalMinor      Int
+  refundedMinor   Int         @default(0)
+  currency        String
+  status          OrderStatus @default(CREATED)
+  paypalOrderId   String?     @unique
+  paypalCaptureId String?     @unique
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  viewerSession ViewerSession @relation(fields: [viewerSessionId], references: [id])
+  attribution   Attribution?  @relation(fields: [attributionId], references: [id])
+  commissions   Commission[]
+}
+
+// ───────────── Commissions & payouts ─────────────
+
+enum CommissionStatus {
+  PENDING
+  ELIGIBLE
+  PAYOUT_SENT
+  PAID
+  FAILED
+  UNCLAIMED
+  RETURNED
+  REVERSED
+}
+
+model Commission {
+  id            String           @id @default(cuid())
+  orderId       String
+  creatorId     String
+  baseMinor     Int
+  rateBps       Int
+  amountMinor   Int
+  reversedMinor Int              @default(0) // portion clawed back by (partial) refunds
+  currency      String
+  status        CommissionStatus @default(PENDING)
+  eligibleAt    DateTime
+  payoutBatchId String?
+  payoutItemId  String? // PayPal payout_item_id
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  order       Order        @relation(fields: [orderId], references: [id])
+  creator     Creator      @relation(fields: [creatorId], references: [id])
+  payoutBatch PayoutBatch? @relation(fields: [payoutBatchId], references: [id])
+
+  // One commission per order per creator: makes commission creation idempotent.
+  @@unique([orderId, creatorId])
+  @@index([creatorId, status])
+}
+
+model PayoutBatch {
+  id            String       @id @default(cuid())
+  paypalBatchId String?      @unique
+  senderBatchId String       @unique // our idempotency key
+  status        String // PayPal batch_status, verbatim
+  totalMinor    Int
+  currency      String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  commissions   Commission[]
+}
+
+// ───────────── Events, audit, budget, cache ─────────────
+
+model WebhookEvent {
+  id            String    @id @default(cuid())
+  paypalEventId String    @unique
+  type          String
+  payload       Json
+  processedAt   DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+enum AuditSource {
+  ai
+  webhook
+  creator
+  viewer
+  system
+  kernel
+}
+
+model AuditEvent {
+  id         String      @id @default(cuid())
+  entityType String
+  entityId   String
+  type       String
+  payload    Json        @default("{}")
+  source     AuditSource
+  createdAt  DateTime    @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model UsageCounter {
+  provider String
+  window   String // e.g. "min:2026-10-08T16:12" or "day:2026-10-08" (UTC)
+  count    Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@id([provider, window])
+}
+
+// Generic cache for quota-costing calls: vision by frame hash, Channel3 by normalized
+// query, embeddings by text hash. Not in the original spec model list; added because
+// the spec requires caching all of these.
+model ApiCache {
+  key       String    @id // "<kind>:<hash>"
+  kind      String
+  value     Json
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([kind])
+}
