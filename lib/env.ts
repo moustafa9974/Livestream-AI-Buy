@@ -39,6 +39,8 @@ const schema = z.object({
   AI_PROVIDER: z.enum(["gemini", "ollama", "claude"]).default("gemini"),
   GEMINI_API_KEY: str,
   GEMINI_VISION_MODEL: z.string().default("gemini-3.8-flash"),
+  // Tried once when the main model is busy (503) or rate-limited (429). "" disables.
+  GEMINI_VISION_FALLBACK_MODEL: z.string().default("gemini-3.5-flash"),
   GEMINI_TEXT_MODEL: z.string().default("gemini-3.5-flash-lite"),
   GEMINI_EMBEDDING_MODEL: z.string().default("gemini-embedding-001"),
   EMBEDDING_DIM: int(768),

@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
-import { GoogleGenAI, MediaResolution, ThinkingLevel } from "@google/genai";
+import { ApiError, GoogleGenAI, MediaResolution, ThinkingLevel } from "@google/genai";
 import { getEnv } from "../env";
 import { VISION_SYSTEM_PROMPT } from "./prompt";
 import { RawVisionResult, VISION_JSON_SCHEMA } from "./vision-schema";
@@ -26,20 +26,31 @@ export function geminiProvider(): VisionProvider {
     name: "gemini",
     budgetKey: "gemini",
     async analyzeRaw(image, text, signal) {
-      const res = await genai!.models.generateContent({
-        model: env.GEMINI_VISION_MODEL,
-        contents: [{ role: "user", parts: [{ inlineData: { mimeType: "image/jpeg", data: image } }, { text }] }],
-        config: {
-          systemInstruction: VISION_SYSTEM_PROMPT,
-          responseMimeType: "application/json",
-          responseJsonSchema: VISION_JSON_SCHEMA,
-          // Medium is plenty for 768px frames and keeps free-tier token use down.
-          mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
-          ...(level ? { thinkingConfig: { thinkingLevel: level as ThinkingLevel } } : {}),
-          abortSignal: signal,
-        },
-      });
-      return res.text ?? "";
+      const call = (model: string) =>
+        genai!.models.generateContent({
+          model,
+          contents: [{ role: "user", parts: [{ inlineData: { mimeType: "image/jpeg", data: image } }, { text }] }],
+          config: {
+            systemInstruction: VISION_SYSTEM_PROMPT,
+            responseMimeType: "application/json",
+            responseJsonSchema: VISION_JSON_SCHEMA,
+            // Medium is plenty for 768px frames and keeps free-tier token use down.
+            mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
+            ...(level ? { thinkingConfig: { thinkingLevel: level as ThinkingLevel } } : {}),
+            abortSignal: signal,
+          },
+        });
+      try {
+        return (await call(env.GEMINI_VISION_MODEL)).text ?? "";
+      } catch (err) {
+        // Free-tier models get "high demand" 503s and per-model 429s; another Flash
+        // model has separate capacity and quota, so try it once before giving up.
+        const busy = err instanceof ApiError && (err.status === 503 || err.status === 429);
+        const fallback = env.GEMINI_VISION_FALLBACK_MODEL;
+        if (!busy || !fallback || fallback === env.GEMINI_VISION_MODEL) throw err;
+        console.warn(`[vision] ${env.GEMINI_VISION_MODEL} returned ${err.status}; retrying on ${fallback}`);
+        return (await call(fallback)).text ?? "";
+      }
     },
   };
 }
