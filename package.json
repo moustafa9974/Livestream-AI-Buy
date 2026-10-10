@@ -19,11 +19,14 @@
     "postinstall": "prisma generate",
     "test:db": "vitest run --config vitest.db.config.mts",
     "demo:cache:export": "tsx scripts/demo-cache.ts export",
-    "demo:cache:import": "tsx scripts/demo-cache.ts import"
+    "demo:cache:import": "tsx scripts/demo-cache.ts import",
+    "catalog:embed": "tsx -e \"import('./lib/search/catalog.ts').then(m=>m.embedCatalog()).then(r=>{console.log(r);process.exit(0)})\"",
+    "search:index": "tsx scripts/search-index.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.1",
     "@base-ui/react": "^1.8.0",
+    "@elastic/elasticsearch": "^9.5.1",
     "@google/genai": "^2.28.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",

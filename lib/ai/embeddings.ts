@@ -17,11 +17,27 @@ export function l2normalize(v: number[]): number[] {
   return n === 0 ? v : v.map((x) => x / n);
 }
 
+function cacheKey(text: string) {
+  const env = getEnv();
+  const input = text.trim().toLowerCase().slice(0, 500);
+  return { input, key: `embed:${createHash("sha256").update(`${env.GEMINI_EMBEDDING_MODEL}|${env.EMBEDDING_DIM}|${input}`).digest("hex")}` };
+}
+
+/**
+ * Cache-only lookup for many texts in one query, with no API calls. Used on the frame hot
+ * path, where a ~4 s embedding call would delay every new item.
+ */
+export async function cachedEmbeddings(texts: string[]): Promise<Array<number[] | null>> {
+  const keys = texts.map((t) => cacheKey(t).key);
+  const rows = await prisma.apiCache.findMany({ where: { key: { in: keys } } });
+  const byKey = new Map(rows.map((r) => [r.key, r.value as number[]]));
+  return keys.map((k) => byKey.get(k) ?? null);
+}
+
 export async function embedText(text: string): Promise<number[] | null> {
   const env = getEnv();
   if (!env.GEMINI_API_KEY) return null;
-  const input = text.trim().toLowerCase().slice(0, 500);
-  const key = `embed:${createHash("sha256").update(`${env.GEMINI_EMBEDDING_MODEL}|${env.EMBEDDING_DIM}|${input}`).digest("hex")}`;
+  const { input, key } = cacheKey(text);
 
   const cached = await prisma.apiCache.findUnique({ where: { key } });
   if (cached) return cached.value as number[];

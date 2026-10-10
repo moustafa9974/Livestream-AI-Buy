@@ -104,6 +104,7 @@ model Detection {
   state            DetectionState               @default(candidate)
   mentionedInAudio Boolean                      @default(false)
   createdAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @default(now()) @updatedAt
 
   stream       Stream         @relation(fields: [streamId], references: [id], onDelete: Cascade)
   matches      ProductMatch[]
@@ -136,6 +137,7 @@ model ProductMatch {
   partnerProduct PartnerProduct? @relation(fields: [partnerProductId], references: [id])
 
   @@index([detectionId])
+  @@index([partnerProductId])
 }
 
 // ───────────── Catalog ─────────────

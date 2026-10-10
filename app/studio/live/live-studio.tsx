@@ -193,7 +193,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, ai, tuning 
 
         <p className="text-xs text-muted-foreground" aria-live="polite">
           Frames sent {sampler.sent} · skipped (unchanged) {sampler.skipped}
-          {last && <> · last: {last.source}{last.provider ? ` (${last.provider})` : ""}, {last.itemsSeen} items, {last.latencyMs} ms</>}
+          {last && <> · last: {last.source}{last.provider ? ` (${last.provider})` : ""}, {last.itemsSeen} items, {last.latencyMs} ms (lookup {last.timings.lookupMs} · AI {last.timings.aiMs} · tracker {last.timings.trackerMs})</>}
           {last?.note && <> · {last.note}</>}
           {sampler.error && <span className="text-destructive"> · {sampler.error}</span>}
         </p>

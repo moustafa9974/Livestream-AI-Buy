@@ -20,7 +20,8 @@ interface Props {
   onClose: () => void;
   clientId: string;
   paypalEnv: "sandbox" | "live";
-  attribution: { streamId: string; detectionId?: string; tsSec: number };
+  /** From /api/attributions: the card click that credits the creator. */
+  attributionId: string | null;
 }
 
 type CaptureResult =
@@ -32,14 +33,14 @@ type CaptureResult =
  * Checkout as a non-modal drawer so the video behind it keeps playing. The browser
  * only says which product; the server prices it and creates the PayPal order.
  */
-export function CheckoutDrawer({ product, onClose, clientId, paypalEnv, attribution }: Props) {
+export function CheckoutDrawer({ product, onClose, clientId, paypalEnv, attributionId }: Props) {
   const sdk = usePayPalSdk(clientId, paypalEnv, product?.currency ?? "USD");
   const sessions = useRef<{ paypal?: PayPalPaymentSession; card?: PayPalPaymentSession }>({});
   const [busy, setBusy] = useState(false);
   // Latest product/attribution for callbacks created once per SDK instance.
-  const current = useRef({ product, attribution, onClose });
+  const current = useRef({ product, attributionId, onClose });
   useEffect(() => {
-    current.current = { product, attribution, onClose };
+    current.current = { product, attributionId, onClose };
   });
 
   useEffect(() => {
@@ -95,11 +96,11 @@ export function CheckoutDrawer({ product, onClose, clientId, paypalEnv, attribut
   // Don't await before start(): PayPal needs the click's "transient activation" to open
   // its window, so we pass the pending order promise straight in.
   function createOrder(paymentMethod: "paypal" | "card"): Promise<{ orderId: string }> {
-    const { product: p, attribution: a } = current.current;
+    const { product: p, attributionId: a } = current.current;
     return fetch("/api/checkout/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ partnerProductId: p!.id, quantity: 1, paymentMethod, ...a }),
+      body: JSON.stringify({ partnerProductId: p!.id, quantity: 1, paymentMethod, ...(a ? { attributionId: a } : {}) }),
     }).then(async (res) => {
       const data = (await res.json()) as { orderId?: string; error?: string };
       if (!res.ok || !data.orderId) {

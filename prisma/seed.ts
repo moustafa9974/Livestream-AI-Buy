@@ -12,6 +12,7 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, type Prisma } from "../generated/prisma/client";
 import { commissionMinor, sumMinor } from "../lib/money";
+import { embedCatalog } from "../lib/search/catalog";
 import { importDemoCache } from "../scripts/demo-cache";
 import { merchants, products } from "./catalog";
 
@@ -271,6 +272,9 @@ async function main() {
   await seedPastDetections();
   await seedSales(now);
   const cachedFrames = await importDemoCache(prisma);
+  // Product vectors for matching. Cached by text hash, so reseeding costs no quota;
+  // without a Gemini key matching falls back to text scoring.
+  const catalog = await embedCatalog();
 
   const counts = {
     merchants: await prisma.merchant.count(),
@@ -280,7 +284,7 @@ async function main() {
     orders: await prisma.order.count(),
     commissions: await prisma.commission.count(),
   };
-  console.log("Seeded demo data:", { ...counts, demoCacheFrames: cachedFrames });
+  console.log("Seeded demo data:", { ...counts, demoCacheFrames: cachedFrames, productEmbeddings: catalog });
 }
 
 main()

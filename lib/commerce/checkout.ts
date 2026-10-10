@@ -26,7 +26,9 @@ export interface StartCheckoutInput {
   quantity: number;
   viewerSessionId: string;
   paymentMethod: "paypal" | "card";
-  /** Which stream moment the viewer clicked; creates the Attribution that pays the creator. */
+  /** The card click recorded via /api/attributions (preferred). Must belong to this viewer + product. */
+  attributionId?: string;
+  /** Fallback: create the attribution here (older clients / tests). */
   attribution?: { streamId: string; detectionId?: string; tsSec: number };
 }
 
@@ -46,7 +48,12 @@ export async function startCheckout(input: StartCheckoutInput) {
 
   const order = await prisma.$transaction(async (tx) => {
     let attributionId: string | undefined;
-    if (input.attribution) {
+    if (input.attributionId) {
+      // Only trust a click this viewer made for this product; otherwise no creator gets
+      // credit (never someone else's stream).
+      const a = await tx.attribution.findUnique({ where: { id: input.attributionId } });
+      if (a && a.viewerSessionId === input.viewerSessionId && a.partnerProductId === product.id) attributionId = a.id;
+    } else if (input.attribution) {
       const stream = await tx.stream.findUnique({ where: { id: input.attribution.streamId } });
       if (stream) {
         const a = await tx.attribution.create({

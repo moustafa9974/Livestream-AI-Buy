@@ -49,7 +49,7 @@ const schema = z.object({
   GEMINI_EMBED_MAX_RPM: int(60),
   GEMINI_EMBED_MAX_RPD: int(900),
   // "" disables the thinking config (for models that don't support thinking levels).
-  GEMINI_THINKING_LEVEL: z.enum(["", "MINIMAL", "LOW", "MEDIUM", "HIGH"]).default("LOW"),
+  GEMINI_THINKING_LEVEL: z.enum(["", "LOW", "MEDIUM", "HIGH"]).default("LOW"),
   VISION_TIMEOUT_MS: int(20_000),
   OLLAMA_BASE_URL: z.string().default("http://127.0.0.1:11434"),
   OLLAMA_VISION_MODEL: z.string().default("qwen2.5vl:7b"),
@@ -64,6 +64,15 @@ const schema = z.object({
   DEMO_CACHE_MAX_DISTANCE: int(10),
   DETECTION_MIN_CONFIDENCE: z.coerce.number().min(0).max(1).default(0.55),
   MAX_VISIBLE_PRODUCTS: int(12),
+  // Featured, high-confidence items show on first sighting (see lib/vision/tracker.ts). >1 disables.
+  DETECTION_FAST_LANE_CONFIDENCE: z.coerce.number().min(0).default(0.9),
+  DETECTION_FAST_LANE_PROMINENCE: z.coerce.number().min(0).max(1).default(0.6),
+  // Match thresholds, calibrated 2026-10-10 on real Gemini embeddings (true ≥0.89, decoys ≤0.69).
+  MATCH_EXACT_SCORE: z.coerce.number().min(0).max(1).default(0.85),
+  MATCH_SIMILAR_SCORE: z.coerce.number().min(0).max(1).default(0.7),
+  // Used only when no embedding is available (embedding quota exhausted).
+  MATCH_TEXT_EXACT_SCORE: z.coerce.number().min(0).max(1).default(0.4),
+  MATCH_TEXT_SIMILAR_SCORE: z.coerce.number().min(0).max(1).default(0.3),
 
   // Sponsors
   CHANNEL3_ENABLED: bool(true),

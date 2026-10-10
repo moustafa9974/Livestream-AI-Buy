@@ -108,23 +108,21 @@ export async function consume(
   const keys = windowKeys(now);
   const limits = limitsFor(provider);
 
-  const bump = (window: string, by: number) =>
-    prisma.usageCounter.upsert({
-      where: { provider_window: { provider, window } },
-      create: { provider, window, count: by },
-      update: { count: { increment: by } },
-    });
+  // One atomic statement for both windows: no interactive transaction, so it never
+  // waits for a pool slot under load, and costs a single round trip.
+  const bump = (by: number) => prisma.$queryRaw<Array<{ window: string; count: number }>>`
+    INSERT INTO "UsageCounter" (provider, "window", count, "updatedAt")
+    VALUES (${provider}, ${keys.minute}, ${by}, now()), (${provider}, ${keys.day}, ${by}, now())
+    ON CONFLICT (provider, "window") DO UPDATE
+      SET count = "UsageCounter".count + EXCLUDED.count, "updatedAt" = now()
+    RETURNING "window", count`;
 
-  const [minuteRow, dayRow] = await prisma.$transaction([
-    bump(keys.minute, cost),
-    bump(keys.day, cost),
-  ]);
-  const usageBefore: Usage = { minute: minuteRow.count - cost, day: dayRow.count - cost };
+  const rows = await bump(cost);
+  const after = (w: string) => rows.find((r) => r.window === w)?.count ?? cost;
+  const usageBefore: Usage = { minute: after(keys.minute) - cost, day: after(keys.day) - cost };
   const decision = decide(usageBefore, limits, cost);
 
-  if (!decision.allowed) {
-    await prisma.$transaction([bump(keys.minute, -cost), bump(keys.day, -cost)]);
-  }
+  if (!decision.allowed) await bump(-cost);
   return decision;
 }
 

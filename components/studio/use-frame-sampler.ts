@@ -5,6 +5,10 @@ import type { FrameOutcome } from "@/lib/vision/process-frame";
 import { DHASH_H, DHASH_W, dHashFromGray, grayFromRgba, hamming } from "@/lib/vision/dhash";
 
 const MAX_WIDTH = 768;
+// Two requests in flight hides most of the AI latency (~5–9 s per Gemini call) without
+// hammering the quota: the 2nd sighting a detection needs arrives one interval later,
+// not one full round-trip later.
+const MAX_IN_FLIGHT = 2;
 const JPEG_QUALITY = 0.7;
 
 export interface SamplerOptions {
@@ -46,6 +50,8 @@ export function useFrameSampler(videoRef: React.RefObject<HTMLVideoElement | nul
     let cacheOnly = false;
     let lastHash: string | null = null;
     let lastSentAt = 0;
+    let inFlight = 0;
+    let newestApplied = -1; // responses can return out of order; never show an older one
 
     const big = document.createElement("canvas");
     const tiny = document.createElement("canvas");
@@ -62,6 +68,7 @@ export function useFrameSampler(videoRef: React.RefObject<HTMLVideoElement | nul
       if (!video || video.readyState < 2 || video.videoWidth === 0 || (video.paused && !video.srcObject)) {
         return schedule(); // nothing to look at yet (or a paused file)
       }
+      if (inFlight >= MAX_IN_FLIGHT) return schedule();
 
       // Perceptual hash from a 9×8 downscale.
       const tctx = tiny.getContext("2d", { willReadFrequently: true })!;
@@ -85,6 +92,12 @@ export function useFrameSampler(videoRef: React.RefObject<HTMLVideoElement | nul
         image = big.toDataURL("image/jpeg", JPEG_QUALITY).split(",")[1];
       }
 
+      // Commit to this frame now so the next tick compares against it, not an older one.
+      lastHash = hash;
+      lastSentAt = now;
+      const seq = now;
+      inFlight++;
+      schedule(); // don't wait for the AI before sampling the next frame
       try {
         const res = await fetch(`/api/streams/${o.streamId}/frames`, {
           method: "POST",
@@ -98,17 +111,22 @@ export function useFrameSampler(videoRef: React.RefObject<HTMLVideoElement | nul
           return;
         }
         if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
-        lastHash = hash;
-        lastSentAt = now;
         // Server-driven pacing: saver mode doubles the interval; cache-only stops sending images.
         cacheOnly = data.nextIntervalSec === null;
         interval = data.nextIntervalSec ?? o.baseIntervalSec * 2;
-        setState((s) => ({ last: data, sent: s.sent + 1, skipped: s.skipped, error: null }));
+        if (seq > newestApplied) {
+          newestApplied = seq;
+          setState((s) => ({ last: data, sent: s.sent + 1, skipped: s.skipped, error: null }));
+        } else {
+          setState((s) => ({ ...s, sent: s.sent + 1 }));
+        }
       } catch (err) {
+        lastHash = null; // this frame never landed; let the next tick resend instead of skipping it
         setState((s) => ({ ...s, error: err instanceof Error ? err.message : "Frame upload failed" }));
         interval = Math.min(interval * 2, 30); // back off on errors
+      } finally {
+        inFlight--;
       }
-      schedule();
     }
 
     timer = setTimeout(tick, 500);

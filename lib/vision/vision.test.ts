@@ -125,9 +125,18 @@ describe("tracker", () => {
     firstSeenSec: 0, lastSeenSec: 0, confidence: 0.9, state: "candidate", ...o,
   });
 
-  it("a single sighting stays a candidate (no flicker from one frame)", () => {
-    const ops = track([], [{ item: item("black hoodie"), embedding: null }], 4);
+  it("a single ordinary sighting stays a candidate (no flicker from one frame)", () => {
+    const ops = track([], [{ item: item("black hoodie", "apparel/hoodie", 0.8), embedding: null }], 4);
     expect(ops).toEqual([expect.objectContaining({ kind: "create", state: "candidate" })]);
+  });
+
+  it("fast lane: a confident, featured item shows on first sighting", () => {
+    const featured = { ...item("black hoodie", "apparel/hoodie", 0.95), prominence: 0.8 };
+    expect(track([], [{ item: featured, embedding: null }], 4)[0]).toMatchObject({ kind: "create", state: "visible" });
+    const background = { ...item("black hoodie", "apparel/hoodie", 0.95), prominence: 0.3 };
+    expect(track([], [{ item: background, embedding: null }], 4)[0]).toMatchObject({ state: "candidate" });
+    const off = { ...DEFAULT_TRACKER, fastLaneConfidence: 2 };
+    expect(track([], [{ item: featured, embedding: null }], 4, off)[0]).toMatchObject({ state: "candidate" });
   });
 
   it("two sightings within 15s make it visible", () => {
@@ -170,6 +179,14 @@ describe("tracker", () => {
     const full = Array.from({ length: 12 }, (_, i) => det({ id: `v${i}`, label: `thing ${i}`, category: `x/${i}`, state: "visible" }));
     const ops = track([...full, det({ id: "c", lastSeenSec: 4 })], [{ item: item("black hoodie"), embedding: null }], 8);
     expect(ops.find((o) => o.kind === "update" && o.id === "c")).toMatchObject({ state: "candidate" });
+  });
+
+  it("without embeddings, a shared adjective doesn't merge different things", () => {
+    const a = { label: "wireless keyboard", category: "electronics/keyboard", embedding: null };
+    const b = { label: "wireless trackpad", category: "electronics/trackpad", embedding: null };
+    expect(similarity(a, b).same).toBe(false);
+    const c = { label: "trackpad", category: "electronics/trackpad", embedding: null };
+    expect(similarity(c, b).same).toBe(true);
   });
 
   it("uses embeddings when both sides have them", () => {

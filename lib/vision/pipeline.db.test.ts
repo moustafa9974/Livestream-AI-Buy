@@ -28,9 +28,10 @@ const nearHash = (h: string, bits: number) => {
   return flipped;
 };
 
+// Confidence below the fast lane, so these tests exercise the 2-sighting rule.
 const item = (label: string, category: string, box = [100, 100, 500, 400]) => ({
   label, category, brand_guess: "unknown", attributes: { color: "black" }, box_2d: box,
-  prominence: 0.8, confidence: 0.9, mentioned_in_audio: false,
+  prominence: 0.8, confidence: 0.85, mentioned_in_audio: false,
 });
 
 class FakeVision implements VisionProvider {

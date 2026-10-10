@@ -25,16 +25,14 @@ export async function getNearestVision(
   dHash: string,
   maxDistance: number,
 ): Promise<(CachedVision & { distance: number }) | null> {
-  // The demo cache is small (one entry per distinct demo frame), so a scan is fine.
-  const rows = await prisma.apiCache.findMany({ where: { kind: "vision" }, select: { key: true }, take: 5000 });
-  let best: { k: string; d: number } | null = null;
+  // The demo cache is small (one entry per distinct demo frame): one query, scan in memory.
+  const rows = await prisma.apiCache.findMany({ where: { kind: "vision" }, select: { key: true, value: true }, take: 5000 });
+  let best: { value: CachedVision; d: number } | null = null;
   for (const r of rows) {
     const d = hamming(dHash, r.key.slice("vision:".length));
-    if (d <= maxDistance && (!best || d < best.d)) best = { k: r.key, d };
+    if (d <= maxDistance && (!best || d < best.d)) best = { value: r.value as unknown as CachedVision, d };
   }
-  if (!best) return null;
-  const row = await prisma.apiCache.findUnique({ where: { key: best.k } });
-  return row ? { ...(row.value as unknown as CachedVision), distance: best.d } : null;
+  return best ? { ...best.value, distance: best.d } : null;
 }
 
 export async function putCachedVision(dHash: string, value: CachedVision): Promise<void> {

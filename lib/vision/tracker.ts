@@ -8,6 +8,11 @@ import type { VisionItem } from "../ai/vision-schema";
  *   (embedding cosine, or word overlap when embeddings are unavailable).
  * - Stabilize: a detection becomes visible only after MIN_HITS sightings within
  *   HIT_WINDOW_SEC at sufficient confidence, so one bad frame never flashes a card.
+ * - Fast lane: an item the model is very sure of AND that is clearly featured
+ *   (confidence ≥ fastLaneConfidence, prominence ≥ fastLaneProminence) shows on its
+ *   first sighting. Flicker comes from low-confidence, incidental items, which still
+ *   need two sightings; this keeps the card within ~5–10 s of the creator holding
+ *   the product up. Set fastLaneConfidence to >1 to disable.
  * - Respect the creator: hidden stays hidden, pinned stays pinned.
  *
  * Pure: takes current state, returns the changes. The caller persists them.
@@ -32,6 +37,8 @@ export interface TrackerConfig {
   maxVisible: number;
   sameItemCosine: number;
   sameItemOverlap: number;
+  fastLaneConfidence: number;
+  fastLaneProminence: number;
 }
 
 export const DEFAULT_TRACKER: TrackerConfig = {
@@ -41,6 +48,8 @@ export const DEFAULT_TRACKER: TrackerConfig = {
   maxVisible: 12,
   sameItemCosine: 0.86,
   sameItemOverlap: 0.5,
+  fastLaneConfidence: 0.9,
+  fastLaneProminence: 0.6,
 };
 
 export interface IncomingItem {
@@ -95,6 +104,11 @@ export function similarity(
     const c = dot(a.embedding, b.embedding) - (sameTop ? 0 : 0.05);
     return { score: c, same: c >= cfg.sameItemCosine };
   }
+  // Without embeddings, words alone can merge different things that share an adjective
+  // ("wireless keyboard" vs "wireless trackpad"), so the kind of thing must agree too.
+  const leafA = a.category.split("/").pop();
+  const leafB = b.category.split("/").pop();
+  if (leafA && leafB && leafA !== leafB) return { score: 0, same: false };
   const o = overlap(tokens(a.label, a.category), tokens(b.label, b.category));
   return { score: o, same: o >= cfg.sameItemOverlap };
 }
@@ -121,7 +135,9 @@ export function track(
     }
 
     if (!best) {
-      const visible = cfg.minHits <= 1 && item.confidence >= cfg.minConfidence && visibleCount < cfg.maxVisible;
+      const fastLane = item.confidence >= cfg.fastLaneConfidence && item.prominence >= cfg.fastLaneProminence;
+      const visible =
+        (cfg.minHits <= 1 || fastLane) && item.confidence >= cfg.minConfidence && visibleCount < cfg.maxVisible;
       if (visible) visibleCount++;
       ops.push({ kind: "create", item, embedding, tsSec, state: visible ? "visible" : "candidate" });
       continue;

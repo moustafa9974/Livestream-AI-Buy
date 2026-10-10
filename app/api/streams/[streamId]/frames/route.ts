@@ -1,7 +1,9 @@
+import { after } from "next/server";
 import { z } from "zod";
 import { errorResponse } from "@/lib/api";
 import { getOwnedStream } from "@/lib/studio";
 import { isDHash } from "@/lib/vision/dhash";
+import { matchNewlyVisible } from "@/lib/matching/match";
 import { FrameError, processFrame } from "@/lib/vision/process-frame";
 
 // ~768px JPEG at q0.7 is ~60–150 KB; base64 adds a third. 600 KB leaves headroom.
@@ -28,6 +30,9 @@ export async function POST(req: Request, ctx: RouteContext<"/api/streams/[stream
       imageJpegBase64: body.image,
       transcript: body.transcript,
     });
+    // Product matching (search + Channel3) runs after the response is sent, so the
+    // creator's frame loop isn't slowed down; the rail updates via SSE when it's done.
+    after(() => matchNewlyVisible(streamId, outcome.newlyVisibleIds));
     return Response.json(outcome);
   } catch (err) {
     if (err instanceof FrameError) {

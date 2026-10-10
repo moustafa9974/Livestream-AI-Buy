@@ -9,6 +9,7 @@ const Body = z.object({
   partnerProductId: z.string().min(1),
   quantity: z.number().int().min(1).max(MAX_QUANTITY).default(1),
   paymentMethod: z.enum(["paypal", "card"]).default("paypal"),
+  attributionId: z.string().min(1).optional(),
   streamId: z.string().min(1).optional(),
   detectionId: z.string().min(1).optional(),
   tsSec: z.number().nonnegative().default(0),
@@ -25,7 +26,8 @@ export async function POST(req: Request) {
       quantity: body.quantity,
       paymentMethod: body.paymentMethod,
       viewerSessionId: viewer.id,
-      attribution: body.streamId
+      attributionId: body.attributionId,
+      attribution: !body.attributionId && body.streamId
         ? { streamId: body.streamId, detectionId: body.detectionId, tsSec: body.tsSec }
         : undefined,
     });

@@ -1,5 +1,5 @@
 import type { DetectionState } from "@/generated/prisma/enums";
-import { embedText } from "../ai/embeddings";
+import { cachedEmbeddings } from "../ai/embeddings";
 import { selectProvider } from "../ai/providers";
 import { analyzeFrame } from "../ai/vision";
 import type { VisionResult } from "../ai/vision-schema";
@@ -7,6 +7,8 @@ import { consume, frameIntervalFor, peek, type BudgetMode } from "../budget";
 import { audit, lockRow } from "../commerce/db";
 import { prisma } from "../db";
 import { getEnv } from "../env";
+import { emitRailChanged } from "../realtime/bus";
+import { embeddingText } from "../search/types";
 import { DEFAULT_TRACKER, track, type TrackedDetection } from "./tracker";
 import { getCachedVision, getNearestVision, putCachedVision } from "./vision-cache";
 
@@ -43,9 +45,13 @@ export interface FrameOutcome {
   /** Why no AI ran, safe to show (e.g. "no AI provider configured", "free-tier limit reached"). */
   note?: string;
   latencyMs: number;
+  /** Where the time went (ms), shown in the studio to make latency visible. */
+  timings: { lookupMs: number; aiMs: number; trackerMs: number };
   itemsSeen: number;
   nextIntervalSec: number | null;
   detections: DetectionView[];
+  /** Detections that just became visible; the caller matches them to products (after responding). */
+  newlyVisibleIds: string[];
 }
 
 export class FrameError extends Error {
@@ -57,6 +63,13 @@ export class FrameError extends Error {
 export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
   const env = getEnv();
   const started = Date.now();
+  const timings = { lookupMs: 0, aiMs: 0, trackerMs: 0 };
+  let mark = started;
+  const lap = (k: keyof typeof timings) => {
+    const now = Date.now();
+    timings[k] += now - mark;
+    mark = now;
+  };
   const stream = await prisma.stream.findUnique({ where: { id: input.streamId } });
   if (!stream) throw new FrameError("NOT_FOUND", "Stream not found");
   if (stream.status !== "live") throw new FrameError("NOT_LIVE", "Stream is not live");
@@ -69,6 +82,7 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
   let mode: BudgetMode = "normal";
 
   const exact = await getCachedVision(input.dHash);
+  lap("lookupMs");
   if (exact) {
     result = exact.result;
     source = "cache";
@@ -96,6 +110,7 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
         note = "Free-tier limit reached: using cached results only";
       } else {
         try {
+          lap("lookupMs");
           const out = await analyzeFrame(
             ai,
             input.imageJpegBase64,
@@ -114,6 +129,7 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
     }
   }
 
+  lap("aiMs");
   const frame = await prisma.frame.create({
     data: {
       streamId: stream.id,
@@ -126,14 +142,14 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
   });
 
   // 3) Tracker: turn this frame's items into stable detections.
+  const newlyVisibleIds: string[] = [];
+  let newCandidates = false;
   if (result && result.items.length > 0) {
-    // Embeddings happen outside the transaction (network calls); null = word-overlap fallback.
-    const incoming = await Promise.all(
-      result.items.map(async (item) => ({
-        item,
-        embedding: await embedText(`${item.label} | ${item.category} | ${Object.values(item.attributes).join(" ")}`),
-      })),
-    );
+    // Hot path uses cached embeddings only (one query, no API call). Labels not yet
+    // embedded fall back to word overlap now and get embedded in the background
+    // (backfillEmbeddings), so the next frame has them.
+    const vectors = await cachedEmbeddings(result.items.map((i) => embeddingText(i.label, i.category, i.attributes)));
+    const incoming = result.items.map((item, i) => ({ item, embedding: vectors[i] }));
 
     await prisma.$transaction(async (tx) => {
       await lockRow(tx, "Stream", stream.id); // one tracker step per stream at a time
@@ -147,6 +163,8 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
         ...DEFAULT_TRACKER,
         minConfidence: env.DETECTION_MIN_CONFIDENCE,
         maxVisible: env.MAX_VISIBLE_PRODUCTS,
+        fastLaneConfidence: env.DETECTION_FAST_LANE_CONFIDENCE,
+        fastLaneProminence: env.DETECTION_FAST_LANE_PROMINENCE,
       });
 
       for (const op of ops) {
@@ -170,7 +188,12 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
           if (op.embedding) {
             await tx.$executeRaw`UPDATE "Detection" SET embedding = ${JSON.stringify(op.embedding)}::vector WHERE id = ${d.id}`;
           }
-          if (op.state === "visible") await auditVisible(tx, d.id, op.item.label, op.tsSec);
+          if (op.state === "visible") {
+            await auditVisible(tx, d.id, op.item.label, op.tsSec);
+            newlyVisibleIds.push(d.id);
+          } else {
+            newCandidates = true;
+          }
         } else {
           await tx.detection.update({
             where: { id: op.id },
@@ -184,16 +207,27 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
               ...(op.becameVisible ? { bestFrameId: frame.id } : {}),
             },
           });
-          if (op.becameVisible) await auditVisible(tx, op.id, op.item.label, op.lastSeenSec);
+          if (op.becameVisible) {
+            await auditVisible(tx, op.id, op.item.label, op.lastSeenSec);
+            newlyVisibleIds.push(op.id);
+          } else if (op.state === "candidate") {
+            newCandidates = true;
+          }
         }
       }
-    }, { timeout: 15_000 }); // Neon round-trips add up; the default 5s is too tight
+    }, { timeout: 15_000, maxWait: 10_000 }); // Neon round-trips add up; defaults (5s / 2s) are too tight
+    emitRailChanged(stream.id);
   }
+
+  lap("trackerMs");
 
   // 4) Tell the client how fast to sample next, based on remaining free quota.
   const ai = selectProvider();
   if (ai?.budgetKey && mode === "normal") mode = (await peek(ai.budgetKey)).mode;
-  const nextIntervalSec = frameIntervalFor(mode, stream.frameIntervalSec);
+  let nextIntervalSec = frameIntervalFor(mode, stream.frameIntervalSec);
+  // A new candidate needs a second sighting to show; look again soon so it appears
+  // within seconds instead of a full interval later.
+  if (newCandidates && nextIntervalSec !== null) nextIntervalSec = Math.min(nextIntervalSec, 2);
 
   return {
     source,
@@ -201,9 +235,11 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
     mode,
     note,
     latencyMs: Date.now() - started,
+    timings,
     itemsSeen: result?.items.length ?? 0,
     nextIntervalSec,
     detections: await listDetections(stream.id, input.tsSec),
+    newlyVisibleIds,
   };
 }
 
