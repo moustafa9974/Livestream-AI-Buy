@@ -216,8 +216,6 @@ function RailCard({ item, canBuy, onBuy }: { item: RailItem; canBuy: boolean; on
             {canBuy ? "Buy with PayPal" : "Checkout unavailable"}
           </Button>
         </>
-      ) : item.similar.length === 0 ? (
-        <p className="text-xs text-muted-foreground">Finding where to buy this…</p>
       ) : null}
 
       {item.similar.length > 0 && (

@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { featureStatus } from "@/lib/flags";
+import { currentStreamFor } from "@/lib/rail";
 import { getCurrentCreator } from "@/lib/session";
 import { listDetections } from "@/lib/vision/process-frame";
 import { LiveStudio } from "./live-studio";
@@ -23,9 +23,7 @@ async function StudioContent() {
   await connection();
   const creator = await getCurrentCreator();
   if (!creator) return <p>Sign in to open the studio.</p>;
-  const stream =
-    (await prisma.stream.findFirst({ where: { creatorId: creator.id, status: { in: ["live", "idle"] } }, orderBy: { createdAt: "desc" } })) ??
-    (await prisma.stream.findFirst({ where: { creatorId: creator.id }, orderBy: { createdAt: "desc" } }));
+  const stream = await currentStreamFor(creator.id);
   if (!stream) return <p>No stream yet.</p>;
 
   const env = getEnv();

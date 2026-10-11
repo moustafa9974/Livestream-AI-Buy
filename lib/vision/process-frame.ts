@@ -122,7 +122,10 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
           provider = out.provider;
           await putCachedVision(input.dHash, { result, provider: out.provider });
         } catch (err) {
-          note = "AI analysis failed for this frame";
+          const timedOut = err instanceof Error && /abort|timed? ?out/i.test(`${err.name} ${err.message}`);
+          note = timedOut
+            ? "The AI took too long on this frame (free tier is busy); trying again on the next one"
+            : "AI analysis failed for this frame; trying again on the next one";
           console.warn("[vision]", ai.name, err instanceof Error ? err.message : err);
         }
       }

@@ -191,6 +191,16 @@ export function LiveStudio({ stream, initialDetections, creatorName, ai, tuning 
           )}
         </div>
 
+        {live && last?.note && (
+          <p role="alert" className="rounded-lg border border-amber-500/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+            {last.note}
+          </p>
+        )}
+        {live && source === "screen" && (
+          <p className="text-xs text-muted-foreground">
+            Tip: share the window or tab with your products in it. Sampling keeps running while you switch tabs.
+          </p>
+        )}
         <p className="text-xs text-muted-foreground" aria-live="polite">
           Frames sent {sampler.sent} · skipped (unchanged) {sampler.skipped}
           {last && <> · last: {last.source}{last.provider ? ` (${last.provider})` : ""}, {last.itemsSeen} items, {last.latencyMs} ms (lookup {last.timings.lookupMs} · AI {last.timings.aiMs} · tracker {last.timings.trackerMs})</>}

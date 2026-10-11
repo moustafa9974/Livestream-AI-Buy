@@ -64,10 +64,10 @@ describe("matching → rail", () => {
 
     const rail = await getRail(streamId);
     const byLabel = Object.fromEntries(rail.items.map((i) => [i.label, i.partner?.title ?? null]));
+    // The laptop isn't in any store we know: it stays off the viewer rail entirely.
     expect(byLabel).toEqual({
       "black hooded sweatshirt": "Everyday Oversized Hoodie: Black",
       "wireless clip-on microphone": "Clip-On Wireless Mic Kit",
-      "silver laptop": null,
     });
     const card = rail.items.find((i) => i.label === "black hooded sweatshirt")!;
     expect(card.partner).toMatchObject({ priceMinor: 4500, currency: "USD", merchantName: "Northloop Apparel" });

@@ -18,6 +18,25 @@ export interface VisionProvider {
 
 let genai: GoogleGenAI | undefined;
 
+// Circuit breaker: a model that just timed out or said "busy" is tried last for a few
+// minutes, so a live demo doesn't pay its timeout on every frame.
+const TRIP_MS = 3 * 60_000;
+const trippedUntil = new Map<string, number>();
+const trip = (model: string) => trippedUntil.set(model, Date.now() + TRIP_MS);
+const healthy = (model: string) => trippedUntil.delete(model);
+
+/** Configured order, with recently failing models moved to the end. */
+export function modelOrder(env: { GEMINI_VISION_MODEL: string; GEMINI_VISION_FALLBACK_MODELS: string }, now = Date.now()): string[] {
+  const all = [env.GEMINI_VISION_MODEL, ...env.GEMINI_VISION_FALLBACK_MODELS.split(",").map((m) => m.trim())]
+    .filter((m, i, a) => m && a.indexOf(m) === i);
+  const ok = all.filter((m) => (trippedUntil.get(m) ?? 0) <= now);
+  return [...ok, ...all.filter((m) => !ok.includes(m))];
+}
+
+export function resetCircuitBreakerForTests(): void {
+  trippedUntil.clear();
+}
+
 export function geminiProvider(): VisionProvider {
   const env = getEnv();
   genai ??= new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
@@ -26,7 +45,7 @@ export function geminiProvider(): VisionProvider {
     name: "gemini",
     budgetKey: "gemini",
     async analyzeRaw(image, text, signal) {
-      const call = (model: string) =>
+      const call = (model: string, attemptSignal: AbortSignal) =>
         genai!.models.generateContent({
           model,
           contents: [{ role: "user", parts: [{ inlineData: { mimeType: "image/jpeg", data: image } }, { text }] }],
@@ -37,20 +56,30 @@ export function geminiProvider(): VisionProvider {
             // Medium is plenty for 768px frames and keeps free-tier token use down.
             mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
             ...(level ? { thinkingConfig: { thinkingLevel: level as ThinkingLevel } } : {}),
-            abortSignal: signal,
+            abortSignal: attemptSignal,
           },
         });
-      try {
-        return (await call(env.GEMINI_VISION_MODEL)).text ?? "";
-      } catch (err) {
-        // Free-tier models get "high demand" 503s and per-model 429s; another Flash
-        // model has separate capacity and quota, so try it once before giving up.
-        const busy = err instanceof ApiError && (err.status === 503 || err.status === 429);
-        const fallback = env.GEMINI_VISION_FALLBACK_MODEL;
-        if (!busy || !fallback || fallback === env.GEMINI_VISION_MODEL) throw err;
-        console.warn(`[vision] ${env.GEMINI_VISION_MODEL} returned ${err.status}; retrying on ${fallback}`);
-        return (await call(fallback)).text ?? "";
+
+      let lastErr: unknown;
+      for (const model of modelOrder(env)) {
+        if (signal.aborted) break;
+        const attempt = AbortSignal.any([signal, AbortSignal.timeout(env.GEMINI_ATTEMPT_TIMEOUT_MS)]);
+        try {
+          const res = await call(model, attempt);
+          healthy(model);
+          return res.text ?? "";
+        } catch (err) {
+          lastErr = err;
+          if (signal.aborted) break; // the whole frame ran out of time
+          // Free-tier models regularly answer 503 "high demand", 429, or just hang. Another
+          // Flash model has separate capacity, so fail over instead of losing the frame.
+          const failover = attempt.aborted || (err instanceof ApiError && (err.status === 503 || err.status === 429));
+          if (!failover) throw err;
+          trip(model);
+          console.warn(`[vision] ${model} ${attempt.aborted ? "timed out" : `returned ${(err as ApiError).status}`}; trying next model`);
+        }
       }
+      throw lastErr ?? new Error("No Gemini model available");
     },
   };
 }

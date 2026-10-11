@@ -97,6 +97,8 @@ async function seedCreatorAndStreams(now: Date) {
         consentAt: pastStart,
         startedAt: pastStart,
         endedAt: new Date(pastStart.getTime() + 42 * 60_000),
+        // Older than the demo stream, so "latest stream" lookups never pick this one.
+        createdAt: pastStart,
       },
       {
         id: DEMO_STREAM_ID,

@@ -9,6 +9,18 @@ const MAX_WIDTH = 768;
 // hammering the quota: the 2nd sighting a detection needs arrives one interval later,
 // not one full round-trip later.
 const MAX_IN_FLIGHT = 2;
+
+// Browsers throttle setTimeout in background tabs (Chrome: to once a minute after
+// a few minutes), and creators usually switch to the tab they're streaming. A tiny
+// worker drives the clock instead, because worker timers aren't throttled that way.
+const TIMER_WORKER = `let t; onmessage = (e) => { clearTimeout(t); t = setTimeout(() => postMessage(0), e.data); };`;
+
+/** Chrome/Edge ImageCapture: grabs frames straight from a screen-share track, even when
+ *  the <video> isn't being painted (background tab). Not in TypeScript's DOM lib. */
+interface ImageCaptureLike {
+  grabFrame(): Promise<ImageBitmap>;
+}
+declare const ImageCapture: { new (track: MediaStreamTrack): ImageCaptureLike } | undefined;
 const JPEG_QUALITY = 0.7;
 
 export interface SamplerOptions {
@@ -45,7 +57,10 @@ export function useFrameSampler(videoRef: React.RefObject<HTMLVideoElement | nul
   useEffect(() => {
     if (!opts.active) return;
     let stopped = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timerUrl = URL.createObjectURL(new Blob([TIMER_WORKER], { type: "text/javascript" }));
+    const timer = new Worker(timerUrl);
+    timer.onmessage = () => void tick();
+    let capture: { track: MediaStreamTrack; grabber: ImageCaptureLike } | null = null;
     let interval = opts.baseIntervalSec;
     let cacheOnly = false;
     let lastHash: string | null = null;
@@ -59,38 +74,56 @@ export function useFrameSampler(videoRef: React.RefObject<HTMLVideoElement | nul
     tiny.height = DHASH_H;
 
     const schedule = () => {
-      if (!stopped) timer = setTimeout(tick, interval * 1000);
+      if (!stopped) timer.postMessage(interval * 1000);
     };
+
+    /** Current frame as something drawable: the screen track (works in background
+     *  tabs) or the <video> element (uploaded/demo files). */
+    async function currentFrame(video: HTMLVideoElement): Promise<{ src: CanvasImageSource; w: number; h: number; close?: () => void } | null> {
+      const track = (video.srcObject as MediaStream | null)?.getVideoTracks()[0];
+      if (track && track.readyState === "live" && typeof ImageCapture !== "undefined") {
+        if (capture?.track !== track) capture = { track, grabber: new ImageCapture(track) };
+        try {
+          const bmp = await capture.grabber.grabFrame();
+          return { src: bmp, w: bmp.width, h: bmp.height, close: () => bmp.close() };
+        } catch {
+          // fall through to the video element
+        }
+      }
+      if (video.readyState < 2 || video.videoWidth === 0 || (video.paused && !video.srcObject)) return null;
+      return { src: video, w: video.videoWidth, h: video.videoHeight };
+    }
 
     async function tick() {
       const video = videoRef.current;
       const o = optsRef.current;
-      if (!video || video.readyState < 2 || video.videoWidth === 0 || (video.paused && !video.srcObject)) {
-        return schedule(); // nothing to look at yet (or a paused file)
-      }
-      if (inFlight >= MAX_IN_FLIGHT) return schedule();
+      if (!video || inFlight >= MAX_IN_FLIGHT) return schedule();
+      const frame = await currentFrame(video);
+      if (!frame) return schedule(); // nothing to look at yet (or a paused file)
 
       // Perceptual hash from a 9×8 downscale.
       const tctx = tiny.getContext("2d", { willReadFrequently: true })!;
-      tctx.drawImage(video, 0, 0, DHASH_W, DHASH_H);
+      tctx.drawImage(frame.src, 0, 0, DHASH_W, DHASH_H);
       const hash = dHashFromGray(grayFromRgba(tctx.getImageData(0, 0, DHASH_W, DHASH_H).data));
 
       const now = Date.now();
       const changed = !lastHash || hamming(hash, lastHash) >= o.minChangeDistance;
       const stale = now - lastSentAt >= o.maxStaleSec * 1000;
       if (!changed && !stale) {
+        frame.close?.();
         setState((s) => ({ ...s, skipped: s.skipped + 1 }));
         return schedule();
       }
 
       let image: string | undefined;
       if (!cacheOnly) {
-        const scale = Math.min(1, MAX_WIDTH / video.videoWidth);
-        big.width = Math.round(video.videoWidth * scale);
-        big.height = Math.round(video.videoHeight * scale);
-        big.getContext("2d")!.drawImage(video, 0, 0, big.width, big.height);
+        const scale = Math.min(1, MAX_WIDTH / frame.w);
+        big.width = Math.round(frame.w * scale);
+        big.height = Math.round(frame.h * scale);
+        big.getContext("2d")!.drawImage(frame.src, 0, 0, big.width, big.height);
         image = big.toDataURL("image/jpeg", JPEG_QUALITY).split(",")[1];
       }
+      frame.close?.();
 
       // Commit to this frame now so the next tick compares against it, not an older one.
       lastHash = hash;
@@ -129,10 +162,11 @@ export function useFrameSampler(videoRef: React.RefObject<HTMLVideoElement | nul
       }
     }
 
-    timer = setTimeout(tick, 500);
+    timer.postMessage(500);
     return () => {
       stopped = true;
-      if (timer) clearTimeout(timer);
+      timer.terminate();
+      URL.revokeObjectURL(timerUrl);
     };
   }, [opts.active, opts.streamId, opts.baseIntervalSec, videoRef]);
 

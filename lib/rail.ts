@@ -50,7 +50,7 @@ export async function getRail(streamId: string): Promise<Rail> {
     }),
   ]);
 
-  const items: RailItem[] = detections.map((d) => {
+  const all: RailItem[] = detections.map((d) => {
     const pm = d.matches.find((m) => m.source === "partner" && m.partnerProduct);
     const p = pm?.partnerProduct ?? null;
     const similar = d.matches
@@ -80,6 +80,10 @@ export async function getRail(streamId: string): Promise<Rail> {
       comparison: p ? priceComparison(p.priceMinor, p.currency, similar) : null,
     };
   });
+
+  // Viewers only see things they can act on: a partner product to buy, or similar items
+  // elsewhere. The studio still lists every detection (lib/vision listDetections).
+  const items = all.filter((i) => i.partner || i.similar.length > 0);
 
   // Pinned first, then most recently seen: the thing on screen now is at the top.
   items.sort((a, b) => (a.state === b.state ? b.lastSeenSec - a.lastSeenSec : a.state === "pinned" ? -1 : 1));
