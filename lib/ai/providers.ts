@@ -22,7 +22,17 @@ let genai: GoogleGenAI | undefined;
 // minutes, so a live demo doesn't pay its timeout on every frame.
 const TRIP_MS = 3 * 60_000;
 const trippedUntil = new Map<string, number>();
-const trip = (model: string) => trippedUntil.set(model, Date.now() + TRIP_MS);
+const trip = (model: string, ms = TRIP_MS) => trippedUntil.set(model, Date.now() + ms);
+
+/** Google's 429 carries RetryInfo (e.g. "26479s" until the daily quota resets). */
+export function retryDelayMs(err: unknown): number | null {
+  if (!(err instanceof Error)) return null;
+  const m = /"retryDelay"s*:s*"(d+(?:.d+)?)s"/.exec(err.message);
+  return m ? Math.min(Number(m[1]) * 1000, 12 * 3_600_000) : null;
+}
+
+/** Thrown when every configured model is out of free quota. */
+export class QuotaExhaustedError extends Error {}
 const healthy = (model: string) => trippedUntil.delete(model);
 
 /** Configured order, with recently failing models moved to the end. */
@@ -75,10 +85,13 @@ export function geminiProvider(): VisionProvider {
           // Flash model has separate capacity, so fail over instead of losing the frame.
           const failover = attempt.aborted || (err instanceof ApiError && (err.status === 503 || err.status === 429));
           if (!failover) throw err;
-          trip(model);
+          // A daily-quota 429 can last hours: skip the model until Google says it resets.
+          const is429 = err instanceof ApiError && err.status === 429;
+          trip(model, (is429 && retryDelayMs(err)) || TRIP_MS);
           console.warn(`[vision] ${model} ${attempt.aborted ? "timed out" : `returned ${(err as ApiError).status}`}; trying next model`);
         }
       }
+      if (lastErr instanceof ApiError && lastErr.status === 429) throw new QuotaExhaustedError("All Gemini models are out of free quota");
       throw lastErr ?? new Error("No Gemini model available");
     },
   };

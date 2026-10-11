@@ -38,16 +38,18 @@ const schema = z.object({
   // AI
   AI_PROVIDER: z.enum(["gemini", "ollama", "claude"]).default("gemini"),
   GEMINI_API_KEY: str,
-  GEMINI_VISION_MODEL: z.string().default("gemini-3.5-flash"),
+  GEMINI_VISION_MODEL: z.string().default("gemini-3.5-flash-lite"),
   // Tried in order when a model is busy (503), rate-limited (429) or times out. "" disables.
-  GEMINI_VISION_FALLBACK_MODELS: z.string().default("gemini-3.6-flash,gemini-3.8-flash"),
+  GEMINI_VISION_FALLBACK_MODELS: z.string().default("gemini-3.1-flash-lite,gemini-3.5-flash,gemini-3.6-flash"),
   // Per-model attempt limit; VISION_TIMEOUT_MS caps the whole frame across fallbacks.
   GEMINI_ATTEMPT_TIMEOUT_MS: int(9_000),
   GEMINI_TEXT_MODEL: z.string().default("gemini-3.5-flash-lite"),
   GEMINI_EMBEDDING_MODEL: z.string().default("gemini-embedding-001"),
   EMBEDDING_DIM: int(768),
   GEMINI_MAX_RPM: int(8),
-  GEMINI_MAX_RPD: int(800),
+  // Measured 2026-10-11: free tier = 20 requests/day PER MODEL for 3.5/3.6-flash. Our
+  // guard counts all models together; Google's per-model 429s are handled by failover.
+  GEMINI_MAX_RPD: int(150),
   GEMINI_EMBED_MAX_RPM: int(60),
   GEMINI_EMBED_MAX_RPD: int(900),
   // "" disables the thinking config (for models that don't support thinking levels).
@@ -61,7 +63,7 @@ const schema = z.object({
   // Vision pipeline tuning
   FRAME_INTERVAL_SEC: int(4),
   DHASH_MIN_DISTANCE: int(10),
-  MAX_STALE_SECONDS: int(20),
+  MAX_STALE_SECONDS: int(30),
   // DEMO_CACHE: reuse a cached frame result when the dHash is within this distance.
   DEMO_CACHE_MAX_DISTANCE: int(10),
   DETECTION_MIN_CONFIDENCE: z.coerce.number().min(0).max(1).default(0.55),

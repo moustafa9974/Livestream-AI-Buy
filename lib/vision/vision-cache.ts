@@ -1,7 +1,9 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { VisionResult } from "../ai/vision-schema";
 import { prisma } from "../db";
-import { hamming } from "./dhash";
+import { cacheableHash, hamming } from "./dhash";
+
+export { cacheableHash };
 
 /**
  * Vision results cached by frame dHash (ApiCache kind "vision"). Exact hits are free

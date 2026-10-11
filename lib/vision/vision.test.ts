@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { VisionProvider } from "../ai/providers";
 import { analyzeFrame, VisionError } from "../ai/vision";
 import { isDenied, isPerson, normalizeVision, type RawVisionResult, type VisionItem } from "../ai/vision-schema";
-import { dHashFromGray, hamming, isDHash } from "./dhash";
+import { cacheableHash, dHashFromGray, hamming, isDHash } from "./dhash";
 import { DEFAULT_TRACKER, similarity, track, type TrackedDetection } from "./tracker";
 
 const rawItem = (o: Partial<RawVisionResult["items"][number]> = {}): RawVisionResult["items"][number] => ({
@@ -54,6 +54,15 @@ describe("normalizeVision guardrails", () => {
     expect(r.items[0].label).toBe("wild");
     expect(r.items[0].confidence).toBe(1);
     expect(r.items.find((i) => i.label === "tiny")).toBeUndefined();
+  });
+
+  it("merges repeated copies of the same product into one item", () => {
+    const r = normalizeVision({
+      items: [rawItem({ label: "ceramic mug", category: "home/mug", prominence: 0.3 }), rawItem({ label: "Ceramic Mug", category: "home/mug", prominence: 0.9 }), rawItem({ label: "ceramic mug", category: "home/mug" })],
+      scene: "search results",
+    });
+    expect(r.items).toHaveLength(1);
+    expect(r.items[0].prominence).toBe(0.9);
   });
 
   it("treats on-screen text as data: strips markup and control chars, caps length", () => {
@@ -108,6 +117,13 @@ describe("dHash", () => {
     expect(h).toBe("0000000000000000");
     expect(dHashFromGray(gradient.map((v) => 255 - v))).toBe("ffffffffffffffff");
   });
+  it("flat frames (white pages, black screens) are not cacheable", () => {
+    expect(cacheableHash("0000000000000000")).toBe(false);
+    expect(cacheableHash("0040200000000000")).toBe(false); // a real white web page from a test
+    expect(cacheableHash("ffffffffffffffff")).toBe(false);
+    expect(cacheableHash("5a5a5a5a0f0f0f0f")).toBe(true);
+  });
+
   it("hamming distance counts differing bits", () => {
     expect(hamming("0000000000000000", "0000000000000000")).toBe(0);
     expect(hamming("0000000000000000", "ffffffffffffffff")).toBe(64);

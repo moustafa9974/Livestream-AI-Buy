@@ -1,6 +1,6 @@
 import type { DetectionState } from "@/generated/prisma/enums";
 import { cachedEmbeddings } from "../ai/embeddings";
-import { selectProvider } from "../ai/providers";
+import { QuotaExhaustedError, selectProvider } from "../ai/providers";
 import { analyzeFrame } from "../ai/vision";
 import type { VisionResult } from "../ai/vision-schema";
 import { consume, frameIntervalFor, peek, type BudgetMode } from "../budget";
@@ -10,7 +10,7 @@ import { getEnv } from "../env";
 import { emitRailChanged } from "../realtime/bus";
 import { embeddingText } from "../search/types";
 import { DEFAULT_TRACKER, track, type TrackedDetection } from "./tracker";
-import { getCachedVision, getNearestVision, putCachedVision } from "./vision-cache";
+import { cacheableHash, getCachedVision, getNearestVision, putCachedVision } from "./vision-cache";
 
 /**
  * One step of the stream watcher (SPEC §3 + §6.2): frame → (cache | AI) → tracker →
@@ -81,13 +81,17 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
   let note: string | undefined;
   let mode: BudgetMode = "normal";
 
-  const exact = await getCachedVision(input.dHash);
+  // Frame-hash caching is for video files (the demo video replays identical frames).
+  // Live screens/cameras rarely repeat, and mostly-white web pages hash almost the same
+  // regardless of content, so a cached answer there would be someone else's frame.
+  const useCache = stream.sourceType === "upload" && cacheableHash(input.dHash);
+  const exact = useCache ? await getCachedVision(input.dHash) : null;
   lap("lookupMs");
   if (exact) {
     result = exact.result;
     source = "cache";
     provider = exact.provider;
-  } else if (env.DEMO_CACHE) {
+  } else if (useCache && env.DEMO_CACHE) {
     const near = await getNearestVision(input.dHash, env.DEMO_CACHE_MAX_DISTANCE);
     if (near) {
       result = near.result;
@@ -120,12 +124,20 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
           result = out.result;
           source = "ai";
           provider = out.provider;
-          await putCachedVision(input.dHash, { result, provider: out.provider });
+          // Only cache real findings: an empty answer cached under a static screen's
+          // hash would block every later frame from being analysed.
+          if (result.items.length > 0 && cacheableHash(input.dHash)) {
+            await putCachedVision(input.dHash, { result, provider: out.provider });
+          }
         } catch (err) {
+          if (err instanceof QuotaExhaustedError) mode = "cache_only";
           const timedOut = err instanceof Error && /abort|timed? ?out/i.test(`${err.name} ${err.message}`);
-          note = timedOut
-            ? "The AI took too long on this frame (free tier is busy); trying again on the next one"
-            : "AI analysis failed for this frame; trying again on the next one";
+          note =
+            err instanceof QuotaExhaustedError
+              ? "Today's free AI quota is used up (it resets daily). Cached results only until then"
+              : timedOut
+                ? "The AI took too long on this frame (free tier is busy); trying again on the next one"
+                : "AI analysis failed for this frame; trying again on the next one";
           console.warn("[vision]", ai.name, err instanceof Error ? err.message : err);
         }
       }

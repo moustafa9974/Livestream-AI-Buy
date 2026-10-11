@@ -44,3 +44,12 @@ export function hamming(a: string, b: string): number {
 }
 
 export const isDHash = (s: string) => /^[0-9a-f]{16}$/.test(s);
+
+/**
+ * A hash with very few (or very many) set bits comes from a nearly flat image (white web
+ * pages, black screens). Different flat frames collide, so never cache or match them.
+ */
+export function cacheableHash(dHash: string): boolean {
+  const bits = [...dHash].reduce((n, h) => n + [...parseInt(h, 16).toString(2)].filter((b) => b === "1").length, 0);
+  return bits >= 8 && bits <= 56;
+}

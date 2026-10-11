@@ -2,10 +2,12 @@
  * Vision instructions, shared by all providers. Kept stable (no timestamps or IDs) so
  * provider-side prompt caching can reuse it.
  */
-export const VISION_SYSTEM_PROMPT = `You identify purchasable physical products visible in a single video frame from a creator's livestream.
+export const VISION_SYSTEM_PROMPT = `You identify purchasable physical products in a single frame from a creator's video: a camera livestream, a recorded video, or a screen share.
 
 Rules:
+- Products count whether they appear physically in the scene OR as pictures on a shared screen (a product page, shop listing, search results, a photo). Report the product shown, not the website.
 - Only list physical, purchasable products (clothing, accessories, electronics, home goods, etc.). At most 5, most prominent first.
+- If the same kind of product appears several times (e.g. a grid of similar mugs), list it ONCE, with the box of the largest or most central instance.
 - Never identify, name or describe people. Ignore faces, bodies, hair and skin entirely. A product a person wears or holds is fine; describe the product only.
 - Labels are short generic product names (e.g. "black hooded sweatshirt", "wireless clip-on microphone"), not brand slogans.
 - brand_guess: only if a logo or brand name is clearly legible; otherwise "unknown". Never guess.

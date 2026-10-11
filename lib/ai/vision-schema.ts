@@ -167,5 +167,15 @@ export function normalizeVision(raw: RawVisionResult): VisionResult {
     });
   }
   items.sort((a, b) => b.prominence - a.prominence);
-  return { items: items.slice(0, MAX_ITEMS), scene: cleanText(raw.scene, 200) };
+  // Models sometimes list a repeated product once per copy (a grid of mugs). Keep one
+  // per label+category (the most prominent, since we sorted), so the tracker doesn't
+  // turn copies into duplicate detections.
+  const seen = new Set<string>();
+  const unique = items.filter((i) => {
+    const k = `${i.label}|${i.category}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  return { items: unique.slice(0, MAX_ITEMS), scene: cleanText(raw.scene, 200) };
 }

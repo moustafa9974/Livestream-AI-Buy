@@ -11,6 +11,15 @@
    4. **Tracker** (`lib/vision/tracker.ts`) dedupes items into detections, using Gemini embeddings or word overlap when those are unavailable. An item only becomes **visible after 2 sightings within 15 seconds**, which stops one-frame flicker. Hidden items stay hidden; pinned items stay pinned.
 3. **Pacing:** the response carries `nextIntervalSec`. In saver mode (≥80% of a limit) sampling slows to 2×. In cache-only mode the browser stops sending images, and only hashes get answered from the cache.
 
+## Free-tier reality (measured 2026-10-11)
+
+- The Gemini free tier allows **20 requests/day per model** for `gemini-3.5-flash` and `gemini-3.6-flash` (Google's `GenerateRequestsPerDayPerProjectPerModel-FreeTier`). Each model has its own quota.
+- `gemini-3.8-flash` (the newest) was overloaded: 100 s+ answers and timeouts.
+- The **Flash-Lite** models found the same products with equally accurate boxes, in 1.6–3.9 s. So the default chain is `3.5-flash-lite → 3.1-flash-lite → 3.5-flash → 3.6-flash`.
+- On a 503, a 429 or a timeout, the frame fails over to the next model. A model out of daily quota is skipped until Google's reset time (from the 429's RetryInfo). When every model is out, the studio says so and only cached results are used.
+- **Budget your quota:** at most one frame every 4 s, and unchanged frames are skipped (stale resend every 30 s). Record the demo video and export the demo cache early, because replays then cost nothing.
+- Frame-hash caching applies only to **uploaded/demo video files**. Live screen shares and cameras are always analysed fresh. Empty results and near-blank frames (white pages) are never cached.
+
 ## Providers
 
 | `AI_PROVIDER` | Cost | Notes |

@@ -17,6 +17,7 @@ const streamId = `test_vstream_${tag}`;
 const usedHashes: string[] = [];
 
 const newHash = () => {
+  // Random 64-bit hashes have ~32 set bits, so they're always "cacheable".
   const h = randomBytes(8).toString("hex");
   usedHashes.push(h);
   return h;
@@ -126,6 +127,35 @@ describe("vision pipeline", () => {
       if (before === undefined) delete process.env.GEMINI_MAX_RPD;
       else process.env.GEMINI_MAX_RPD = before;
       resetEnvCache();
+    }
+  });
+
+  it("never caches an empty answer (a static screen would be stuck on 'nothing here')", async () => {
+    fake.items = [];
+    const h = newHash();
+    await frame(36, h);
+    fake.items = [item("black hoodie", "apparel/hoodie")];
+    const again = await frame(40, h);
+    expect(again.source).toBe("ai"); // analysed again, not served "nothing" from cache
+    expect(fake.calls).toBe(2);
+  });
+
+  it("screen shares never use the frame cache", async () => {
+    const screenId = `test_vscreen_${tag}`;
+    await prisma.stream.create({ data: { id: screenId, creatorId, title: "Screen", sourceType: "screen", status: "live" } });
+    try {
+      const h = newHash();
+      await frame(44, h); // caches under h (upload stream)
+      const calls = fake.calls;
+      const out = await processFrame({ streamId: screenId, tsSec: 1, dHash: h, imageJpegBase64: "ZmFrZQ==" });
+      expect(out.source).toBe("ai");
+      expect(fake.calls).toBe(calls + 1);
+    } finally {
+      const dets = await prisma.detection.findMany({ where: { streamId: screenId }, select: { id: true } });
+      await prisma.auditEvent.deleteMany({ where: { entityId: { in: dets.map((d) => d.id) } } });
+      await prisma.detection.deleteMany({ where: { streamId: screenId } });
+      await prisma.frame.deleteMany({ where: { streamId: screenId } });
+      await prisma.stream.delete({ where: { id: screenId } });
     }
   });
 
