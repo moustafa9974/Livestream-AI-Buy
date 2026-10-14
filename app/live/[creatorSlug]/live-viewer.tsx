@@ -197,7 +197,9 @@ function RailCard({ item, canBuy, onBuy }: { item: RailItem; canBuy: boolean; on
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-semibold">{p ? p.title : item.label}</p>
-          <p className="truncate text-xs text-muted-foreground">{p ? p.merchantName : "Spotted on screen"}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {p ? p.merchantName : item.state === "pinned" ? "Pinned by the creator" : "Spotted on screen"}
+          </p>
         </div>
         {p && <Badge variant={p.kind === "exact" ? "default" : "outline"}>{p.kind === "exact" ? "Exact match" : "Similar"}</Badge>}
       </div>
@@ -216,6 +218,8 @@ function RailCard({ item, canBuy, onBuy }: { item: RailItem; canBuy: boolean; on
             {canBuy ? "Buy with PayPal" : "Checkout unavailable"}
           </Button>
         </>
+      ) : item.similar.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Featured by the creator. Not available to buy here yet.</p>
       ) : null}
 
       {item.similar.length > 0 && (

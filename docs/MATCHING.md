@@ -26,7 +26,9 @@
 | ceramic coffee mug | Speckled Stoneware Mug | 0.95 exact |
 | grey hoodie | Hoodie: Heather Grey (not the black one) | 1.00 exact |
 | silver laptop | none (not in catalog) | 0.66, below threshold |
-| red baseball cap | Washed Canvas Cap (colour conflict) | 0.69, below threshold |
+| red baseball cap | Washed Canvas Cap (colour conflict) | 0.77 similar (2026-10-14: colour conflicts block "exact" but no longer "similar") |
+| striped coffee mug | Speckled Stoneware Mug (colour conflict) | 0.77 similar |
+| black quilted bomber jacket | none (no jackets in catalog) | 0.63, below threshold |
 
 ## Search backends
 

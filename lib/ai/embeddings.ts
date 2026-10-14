@@ -34,17 +34,30 @@ export async function cachedEmbeddings(texts: string[]): Promise<Array<number[] 
   return keys.map((k) => byKey.get(k) ?? null);
 }
 
+// Identical texts requested at the same time (two frames, matching + backfill) share one
+// API call instead of racing each other: saves quota and avoids duplicate cache writes.
+const inFlight = new Map<string, Promise<number[] | null>>();
+
 export async function embedText(text: string): Promise<number[] | null> {
   const env = getEnv();
   if (!env.GEMINI_API_KEY) return null;
   const { input, key } = cacheKey(text);
+  const pending = inFlight.get(key);
+  if (pending) return pending;
+  const p = embedUncached(input, key).finally(() => inFlight.delete(key));
+  inFlight.set(key, p);
+  return p;
+}
 
+async function embedUncached(input: string, key: string): Promise<number[] | null> {
+  const env = getEnv();
   const cached = await prisma.apiCache.findUnique({ where: { key } });
   if (cached) return cached.value as number[];
 
   const budget = await consume("gemini_embed");
   if (!budget.allowed) return null;
 
+  let vec: number[];
   try {
     genai ??= new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
     const res = await genai.models.embedContent({
@@ -60,13 +73,15 @@ export async function embedText(text: string): Promise<number[] | null> {
     if (!values || values.length !== env.EMBEDDING_DIM) return null;
     // gemini-embedding-001 only pre-normalizes the full 3072-dim output; truncated
     // vectors must be normalized by us (Gemini embeddings docs).
-    const vec = l2normalize(values);
-    await prisma.apiCache.upsert({ where: { key }, create: { key, kind: "embed", value: vec }, update: {} });
-    return vec;
+    vec = l2normalize(values);
   } catch (err) {
     console.warn("[embed] failed, using word-overlap fallback:", err instanceof Error ? err.message : err);
     return null;
   }
+  // Another process may have cached the same text a moment ago; that's fine, and the
+  // vector we already paid for is still valid, so never let the cache write lose it.
+  await prisma.apiCache.createMany({ data: [{ key, kind: "embed", value: vec }], skipDuplicates: true }).catch(() => {});
+  return vec;
 }
 
 export function cosine(a: number[], b: number[]): number {

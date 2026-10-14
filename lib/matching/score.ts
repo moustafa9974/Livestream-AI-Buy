@@ -85,7 +85,9 @@ export function scoreCandidate(seen: Seen, c: Candidate, vectorScore: number | n
       score += 0.04;
       reasons.push("color_match");
     } else {
-      score -= 0.12;
+      // A different colour can never be "exact" (see classify), but the same kind of
+      // product in another colour is exactly what "similar" means, so only a small nudge.
+      score -= 0.04;
       colorConflict = true;
       reasons.push("color_conflict");
     }

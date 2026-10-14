@@ -81,9 +81,10 @@ export async function getRail(streamId: string): Promise<Rail> {
     };
   });
 
-  // Viewers only see things they can act on: a partner product to buy, or similar items
-  // elsewhere. The studio still lists every detection (lib/vision listDetections).
-  const items = all.filter((i) => i.partner || i.similar.length > 0);
+  // Viewers see things they can act on (a partner product, or similar items elsewhere),
+  // plus anything the creator pinned: a pin means "show this", even before it's buyable.
+  // The studio still lists every detection (lib/vision listDetections).
+  const items = all.filter((i) => i.partner || i.similar.length > 0 || i.state === "pinned");
 
   // Pinned first, then most recently seen: the thing on screen now is at the top.
   items.sort((a, b) => (a.state === b.state ? b.lastSeenSec - a.lastSeenSec : a.state === "pinned" ? -1 : 1));

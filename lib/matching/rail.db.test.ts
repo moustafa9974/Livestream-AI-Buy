@@ -80,6 +80,15 @@ describe("matching → rail", () => {
     expect(await prisma.productMatch.count({ where: { detectionId: d.id } })).toBe(1);
   });
 
+  it("a pinned item shows to viewers even with nothing to buy yet", async () => {
+    const d = await detection("black quilted bomber jacket", "apparel/jacket", { color: "black" });
+    await matchDetection(d.id);
+    expect((await getRail(streamId)).items.find((i) => i.detectionId === d.id)).toBeUndefined(); // visible, unbuyable: hidden
+    await prisma.detection.update({ where: { id: d.id }, data: { state: "pinned" } });
+    const card = (await getRail(streamId)).items.find((i) => i.detectionId === d.id);
+    expect(card).toMatchObject({ state: "pinned", partner: null });
+  });
+
   it("hidden detections never reach viewers", async () => {
     const d = await detection("round tortoise sunglasses", "accessories/sunglasses", { color: "tortoiseshell" }, "hidden");
     await matchDetection(d.id);

@@ -39,9 +39,9 @@ export async function getNearestVision(
 
 export async function putCachedVision(dHash: string, value: CachedVision): Promise<void> {
   const json = value as unknown as Prisma.InputJsonValue;
-  await prisma.apiCache.upsert({
-    where: { key: key(dHash) },
-    create: { key: key(dHash), kind: "vision", value: json },
-    update: { value: json },
-  });
+  // Two frames with the same hash can land together; the first write wins and the
+  // second is a harmless no-op instead of a unique-key error.
+  await prisma.apiCache
+    .createMany({ data: [{ key: key(dHash), kind: "vision", value: json }], skipDuplicates: true })
+    .catch((err) => console.warn("[vision cache]", err instanceof Error ? err.message : err));
 }
