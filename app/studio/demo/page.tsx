@@ -1,0 +1,42 @@
+import { Suspense } from "react";
+import { connection } from "next/server";
+import { prisma } from "@/lib/db";
+import { getEnv } from "@/lib/env";
+import { getRuntimeSettings } from "@/lib/settings";
+import { DemoPanel } from "./demo-panel";
+
+export default function DemoPage() {
+  return (
+    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
+      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
+        <Content />
+      </Suspense>
+    </main>
+  );
+}
+
+async function Content() {
+  await connection();
+  const env = getEnv();
+  if (!env.DEMO_MODE) return <p>The demo control panel is only available with DEMO_MODE=true.</p>;
+  const [products, settings, kernelRunning] = await Promise.all([
+    prisma.partnerProduct.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
+    getRuntimeSettings(),
+    prisma.kernelSession.count({ where: { status: "running" } }),
+  ]);
+  return (
+    <>
+      <header>
+        <h1 className="text-2xl font-bold tracking-tight">Demo control panel</h1>
+        <p className="text-sm text-muted-foreground">For live demos: recover from a bad network, an empty AI quota or an unlucky frame. Only shown with DEMO_MODE=true.</p>
+      </header>
+      <DemoPanel
+        products={products}
+        holdHours={settings.commissionHoldHours ?? env.COMMISSION_HOLD_HOURS}
+        holdOverridden={settings.commissionHoldHours !== undefined}
+        aiProvider={settings.aiProvider ?? env.AI_PROVIDER}
+        kernelRunning={kernelRunning}
+      />
+    </>
+  );
+}

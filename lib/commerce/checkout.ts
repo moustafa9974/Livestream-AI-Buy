@@ -6,6 +6,8 @@ import { toMinor } from "../money";
 import { paypal, type PayPalCapture, type PayPalOrder } from "../paypal/gateway";
 import { PayPalApiError } from "../paypal/http";
 import { orderMachine } from "../state/order";
+import { formatMoney } from "../money";
+import { notify } from "../notify";
 import { createCommissionForOrder } from "./commissions";
 import { audit, lockRow } from "./db";
 import { buildCreateOrderBody, type OrderLine } from "./order-body";
@@ -157,6 +159,7 @@ export async function applyCapture(args: {
 }): Promise<CaptureOutcome> {
   const { orderId, capture, source } = args;
   const target = captureTarget(capture.status);
+  let sale: { creatorId: string; amountMinor: number; currency: string; title: string } | null = null;
 
   await prisma.$transaction(async (tx) => {
     await lockRow(tx, "Order", orderId);
@@ -184,8 +187,24 @@ export async function applyCapture(args: {
       source,
       payload: { captureStatus: capture.status, capturedMinor },
     });
-    if (target === "CAPTURED") await createCommissionForOrder(tx, orderId, capturedMinor);
+    if (target === "CAPTURED") {
+      const c = await createCommissionForOrder(tx, orderId, capturedMinor);
+      if (c.created && c.creatorId) {
+        const title = (order.items as unknown as Array<{ title?: string }>)[0]?.title ?? "a product";
+        sale = { creatorId: c.creatorId, amountMinor: c.amountMinor, currency: c.currency ?? order.currency, title };
+      }
+    }
   });
+
+  // Outside the transaction: a slow or failing Zap never delays or rolls back a sale.
+  if (sale) {
+    const s: { creatorId: string; amountMinor: number; currency: string; title: string } = sale;
+    void notify(s.creatorId, "sale.created", {
+      title: `New sale: ${s.title}`,
+      body: `You earned ${formatMoney(s.amountMinor, s.currency)} commission.`,
+      data: { orderId, product: s.title, commissionMinor: s.amountMinor, currency: s.currency },
+    });
+  }
 
   if (target === "CAPTURED") return capturedOutcome(orderId);
   if (target === "FAILED") return { status: "declined", orderId };

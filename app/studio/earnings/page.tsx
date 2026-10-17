@@ -4,10 +4,10 @@ import { getEarnings } from "@/lib/commerce/earnings";
 import { featureStatus } from "@/lib/flags";
 import { formatMoney } from "@/lib/money";
 import { getCurrentCreator } from "@/lib/session";
-import { EarningsTable } from "./earnings-table";
+import { EarningsTable, ProductsGrid } from "./earnings-table";
 import { PayMeNow } from "./pay-me-now";
 
-// Minimal Phase 2 earnings page. Phase 5 swaps the table for AG Grid and adds polish.
+// Earnings (SPEC §8): KPI tiles, Pay me now, per-product grid and sales ledger (AG Grid), timeline.
 export default function EarningsPage() {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8">
@@ -56,6 +56,11 @@ async function EarningsContent() {
             <p className="mt-1 truncate text-xs text-muted-foreground">{t.hint}</p>
           </div>
         ))}
+      </section>
+
+      <section aria-labelledby="by-product" className="space-y-3">
+        <h2 id="by-product" className="text-lg font-semibold">By product</h2>
+        {data.products.length ? <ProductsGrid rows={data.products} /> : <p className="text-muted-foreground">No clicks yet.</p>}
       </section>
 
       <section aria-labelledby="ledger" className="space-y-3">

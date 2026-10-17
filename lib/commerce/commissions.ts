@@ -1,5 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { getEnv } from "../env";
+import { commissionHoldHours } from "../settings";
 import { commissionMinor } from "../money";
 import { eligibleAtFrom } from "../state/commission";
 import { audit, isUniqueViolation } from "./db";
@@ -14,7 +14,7 @@ export async function createCommissionForOrder(
   orderId: string,
   capturedMinor: number,
   now = new Date(),
-): Promise<{ created: boolean; amountMinor: number; creatorName?: string }> {
+): Promise<{ created: boolean; amountMinor: number; creatorName?: string; creatorId?: string; currency?: string }> {
   const order = await tx.order.findUniqueOrThrow({
     where: { id: orderId },
     include: { attribution: { include: { stream: { include: { creator: true } } } } },
@@ -26,7 +26,7 @@ export async function createCommissionForOrder(
   // never more than we charged).
   const base = Math.min(order.subtotalMinor, capturedMinor);
   const amountMinor = commissionMinor(base, creator.commissionRateBps);
-  const eligibleAt = eligibleAtFrom(now, getEnv().COMMISSION_HOLD_HOURS);
+  const eligibleAt = eligibleAtFrom(now, await commissionHoldHours());
 
   try {
     const commission = await tx.commission.create({
@@ -50,7 +50,7 @@ export async function createCommissionForOrder(
       source: "system",
       payload: { orderId, amountMinor, rateBps: creator.commissionRateBps, baseMinor: base },
     });
-    return { created: true, amountMinor, creatorName: creator.displayName };
+    return { created: true, amountMinor, creatorName: creator.displayName, creatorId: creator.id, currency: order.currency };
   } catch (err) {
     if (isUniqueViolation(err)) return { created: false, amountMinor, creatorName: creator.displayName };
     throw err;

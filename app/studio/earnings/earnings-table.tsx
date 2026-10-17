@@ -3,11 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import { DataGrid } from "@/components/grid/data-grid";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Earnings } from "@/lib/commerce/earnings";
 import { formatMoney } from "@/lib/money";
+
+type Row = Earnings["rows"][number];
+type ProductRow = Earnings["products"][number];
 
 const STATUS_STYLE: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   PAID: "default",
@@ -20,13 +24,33 @@ const STATUS_STYLE: Record<string, "default" | "secondary" | "outline" | "destru
   REVERSED: "outline",
 };
 
-function moment(sec: number | null) {
-  if (sec === null) return "—";
-  const m = Math.floor(sec / 60);
-  return `${m}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
+const mmss = (sec: number | null) =>
+  sec === null ? "—" : `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
+
+/** Per-product performance: clicks → sales → conversion → commission (AG Grid). */
+export function ProductsGrid({ rows }: { rows: ProductRow[] }) {
+  const columns: ColDef<ProductRow>[] = [
+    { field: "product", headerName: "Product", minWidth: 220 },
+    {
+      headerName: "Best moment",
+      valueGetter: (p) => (p.data?.bestMoment ? `${p.data.bestMoment.stream} @ ${mmss(p.data.bestMoment.tsSec)}` : "—"),
+      minWidth: 220,
+    },
+    { field: "clicks", headerName: "Clicks", maxWidth: 110 },
+    { field: "sales", headerName: "Sales", maxWidth: 110 },
+    { field: "conversionPct", headerName: "Conversion", valueFormatter: (p) => `${p.value}%`, maxWidth: 140 },
+    {
+      field: "commissionMinor",
+      headerName: "Commission",
+      valueFormatter: (p) => formatMoney(p.value as number, p.data?.currency ?? "USD"),
+      maxWidth: 160,
+    },
+  ];
+  return <DataGrid label="Products" rows={rows} columns={columns} getRowId={(r) => r.productId} csvName="seen-products.csv" height={300} />;
 }
 
-export function EarningsTable({ rows, canRefund }: { rows: Earnings["rows"]; canRefund: boolean }) {
+/** Every sale's commission with its payout status pill and a refund action (AG Grid). */
+export function EarningsTable({ rows, canRefund }: { rows: Row[]; canRefund: boolean }) {
   const router = useRouter();
   const [refunding, setRefunding] = useState<string | null>(null);
 
@@ -50,57 +74,45 @@ export function EarningsTable({ rows, canRefund }: { rows: Earnings["rows"]; can
     }
   }
 
-  if (rows.length === 0) return <p className="text-muted-foreground">No sales yet.</p>;
+  const columns: ColDef<Row>[] = [
+    { field: "createdAt", headerName: "Date", valueFormatter: (p) => new Date(p.value as string).toLocaleString(), minWidth: 170 },
+    { field: "product", headerName: "Product", minWidth: 200 },
+    { headerName: "Moment", valueGetter: (p) => (p.data ? `${p.data.streamTitle ?? "—"} @ ${mmss(p.data.momentSec)}` : ""), minWidth: 200 },
+    {
+      field: "orderTotalMinor",
+      headerName: "Order",
+      valueFormatter: (p) =>
+        p.data ? `${formatMoney(p.data.orderTotalMinor, p.data.currency)}${p.data.refundedMinor ? ` (−${formatMoney(p.data.refundedMinor, p.data.currency)})` : ""}` : "",
+      maxWidth: 170,
+    },
+    {
+      headerName: "Commission",
+      valueGetter: (p) => (p.data ? p.data.amountMinor - p.data.reversedMinor : 0),
+      valueFormatter: (p) => formatMoney(p.value as number, p.data?.currency ?? "USD"),
+      maxWidth: 150,
+    },
+    {
+      field: "status",
+      headerName: "Payout",
+      maxWidth: 150,
+      cellRenderer: (p: ICellRendererParams<Row>) => (
+        <Badge variant={STATUS_STYLE[p.value as string] ?? "outline"}>{String(p.value).replace("_", " ").toLowerCase()}</Badge>
+      ),
+    },
+    {
+      headerName: "",
+      sortable: false,
+      filter: false,
+      maxWidth: 120,
+      cellRenderer: (p: ICellRendererParams<Row>) =>
+        canRefund && p.data?.refundable ? (
+          <Button variant="ghost" size="sm" disabled={refunding === p.data.orderId} onClick={() => refund(p.data!.orderId)}>
+            {refunding === p.data.orderId ? "Refunding…" : "Refund"}
+          </Button>
+        ) : null,
+    },
+  ];
 
-  return (
-    <div className="overflow-x-auto rounded-xl border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Product</TableHead>
-            <TableHead>Moment</TableHead>
-            <TableHead className="text-end">Order</TableHead>
-            <TableHead className="text-end">Commission</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>
-              <span className="sr-only">Actions</span>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((r) => (
-            <TableRow key={r.id}>
-              <TableCell className="font-medium">
-                {r.product}
-                {r.streamTitle && <span className="block text-xs text-muted-foreground">{r.streamTitle}</span>}
-              </TableCell>
-              <TableCell className="tabular-nums">{moment(r.momentSec)}</TableCell>
-              <TableCell className="text-end tabular-nums">
-                {formatMoney(r.orderTotalMinor, r.currency)}
-                {r.refundedMinor > 0 && (
-                  <span className="block text-xs text-muted-foreground">−{formatMoney(r.refundedMinor, r.currency)} refunded</span>
-                )}
-              </TableCell>
-              <TableCell className="text-end tabular-nums">
-                {formatMoney(r.amountMinor - r.reversedMinor, r.currency)}
-                {r.reversedMinor > 0 && (
-                  <span className="block text-xs text-muted-foreground">of {formatMoney(r.amountMinor, r.currency)}</span>
-                )}
-              </TableCell>
-              <TableCell>
-                <Badge variant={STATUS_STYLE[r.status] ?? "outline"}>{r.status.replace("_", " ").toLowerCase()}</Badge>
-              </TableCell>
-              <TableCell>
-                {canRefund && r.refundable && (
-                  <Button variant="ghost" size="sm" disabled={refunding === r.orderId} onClick={() => refund(r.orderId)}>
-                    {refunding === r.orderId ? "Refunding…" : "Refund"}
-                  </Button>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
+  if (rows.length === 0) return <p className="text-muted-foreground">No sales yet.</p>;
+  return <DataGrid label="Sales ledger" rows={rows} columns={columns} getRowId={(r) => r.id} csvName="seen-earnings.csv" />;
 }

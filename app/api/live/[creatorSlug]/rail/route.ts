@@ -33,6 +33,11 @@ export async function GET(req: Request, ctx: RouteContext<"/api/live/[creatorSlu
         if (closed || sending) return;
         sending = true;
         try {
+          // The stream can disappear (demo reset): end this connection instead of erroring forever.
+          if (!(await prisma.stream.findUnique({ where: { id: stream.id }, select: { id: true } }))) {
+            cleanup();
+            return;
+          }
           const version = await railVersion(stream.id);
           if (force || version !== lastVersion) {
             const rail = await getRail(stream.id);

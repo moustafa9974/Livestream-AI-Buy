@@ -95,7 +95,7 @@ export async function getRail(streamId: string): Promise<Rail> {
 export async function currentStreamFor(creatorId: string) {
   return (
     (await prisma.stream.findFirst({ where: { creatorId, status: "live" }, orderBy: { startedAt: "desc" } })) ??
-    (await prisma.stream.findFirst({ where: { creatorId, status: "idle" }, orderBy: { createdAt: "desc" } })) ??
-    (await prisma.stream.findFirst({ where: { creatorId }, orderBy: { createdAt: "desc" } }))
+    (await prisma.stream.findFirst({ where: { creatorId, status: "idle", scheduledFor: null }, orderBy: { createdAt: "desc" } })) ??
+    (await prisma.stream.findFirst({ where: { creatorId, scheduledFor: null }, orderBy: { createdAt: "desc" } }))
   );
 }

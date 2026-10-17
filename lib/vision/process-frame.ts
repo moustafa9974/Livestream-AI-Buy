@@ -7,7 +7,9 @@ import { consume, frameIntervalFor, peek, type BudgetMode } from "../budget";
 import { audit, lockRow } from "../commerce/db";
 import { prisma } from "../db";
 import { getEnv } from "../env";
+import { notify } from "../notify";
 import { emitRailChanged } from "../realtime/bus";
+import { getRuntimeSettings } from "../settings";
 import { embeddingText } from "../search/types";
 import { DEFAULT_TRACKER, track, type TrackedDetection } from "./tracker";
 import { cacheableHash, getCachedVision, getNearestVision, putCachedVision } from "./vision-cache";
@@ -74,6 +76,8 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
   if (!stream) throw new FrameError("NOT_FOUND", "Stream not found");
   if (stream.status !== "live") throw new FrameError("NOT_LIVE", "Stream is not live");
 
+  const aiOverride = (await getRuntimeSettings()).aiProvider;
+
   // 1) Cache first: never pay quota twice for the same picture.
   let result: VisionResult | null = null;
   let source: FrameOutcome["source"] = "none";
@@ -102,7 +106,7 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
 
   // 2) Otherwise ask the AI, if one is configured and the budget allows.
   if (!result) {
-    const ai = selectProvider();
+    const ai = selectProvider(aiOverride);
     if (!ai) {
       note = "No AI provider configured";
     } else if (!input.imageJpegBase64) {
@@ -237,8 +241,9 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
   lap("trackerMs");
 
   // 4) Tell the client how fast to sample next, based on remaining free quota.
-  const ai = selectProvider();
+  const ai = selectProvider(aiOverride);
   if (ai?.budgetKey && mode === "normal") mode = (await peek(ai.budgetKey)).mode;
+  if (mode !== "normal") void notifySaverOnce(stream.creatorId, mode);
   let nextIntervalSec = frameIntervalFor(mode, stream.frameIntervalSec);
   // A new candidate needs a second sighting to show; look again soon so it appears
   // within seconds instead of a full interval later.
@@ -256,6 +261,21 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
     detections: await listDetections(stream.id, input.tsSec),
     newlyVisibleIds,
   };
+}
+
+/** "Free-tier saver mode" heads-up, at most once a day per creator. */
+async function notifySaverOnce(creatorId: string, mode: BudgetMode) {
+  const since = new Date(Date.now() - 24 * 3_600_000);
+  const recent = await prisma.notification.findFirst({ where: { creatorId, type: "budget.saver_mode", createdAt: { gte: since } } });
+  if (recent) return;
+  await notify(creatorId, "budget.saver_mode", {
+    title: mode === "cache_only" ? "Free AI quota used up for today" : "Free-tier saver mode on",
+    body:
+      mode === "cache_only"
+        ? "Seen is using cached results until the quota resets. Products already detected stay shoppable."
+        : "You're close to today's free AI limit, so Seen is sampling less often.",
+    data: { mode },
+  });
 }
 
 async function auditVisible(tx: Parameters<typeof audit>[0], id: string, label: string, tsSec: number) {

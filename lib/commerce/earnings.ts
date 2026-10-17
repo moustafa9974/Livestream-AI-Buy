@@ -39,6 +39,22 @@ export async function getEarnings(creatorId: string) {
     take: 25,
   });
 
+  // Per product: clicks (card clicks on this creator's streams) → sales → conversion.
+  const attributions = await prisma.attribution.findMany({
+    where: { stream: { creatorId } },
+    include: { partnerProduct: true, stream: true, orders: { include: { commissions: true } } },
+  });
+  const byProduct = new Map<string, { productId: string; product: string; clicks: number; sales: number; commissionMinor: number; currency: string; best: { stream: string; tsSec: number; sales: number } | null }>();
+  for (const a of attributions) {
+    const row = byProduct.get(a.partnerProductId) ?? { productId: a.partnerProductId, product: a.partnerProduct.title, clicks: 0, sales: 0, commissionMinor: 0, currency: a.partnerProduct.currency, best: null };
+    row.clicks++;
+    const paid = a.orders.filter((o) => o.status === "CAPTURED" || o.status === "PARTIALLY_REFUNDED");
+    row.sales += paid.length;
+    row.commissionMinor += sumMinor(paid.flatMap((o) => o.commissions.map((c) => c.amountMinor - c.reversedMinor)));
+    if (paid.length && (!row.best || paid.length > row.best.sales)) row.best = { stream: a.stream.title, tsSec: a.tsSec, sales: paid.length };
+    byProduct.set(a.partnerProductId, row);
+  }
+
   const openBatch = commissions.find((c) => c.status === "PAYOUT_SENT" && c.payoutBatchId)?.payoutBatchId ?? null;
 
   return {
@@ -53,6 +69,9 @@ export async function getEarnings(creatorId: string) {
       topProduct,
     },
     openBatch,
+    products: [...byProduct.values()]
+      .map((p) => ({ ...p, conversionPct: p.clicks ? Math.round((1000 * p.sales) / p.clicks) / 10 : 0, bestMoment: p.best ? { stream: p.best.stream, tsSec: p.best.tsSec } : null }))
+      .sort((a, b) => b.commissionMinor - a.commissionMinor || b.sales - a.sales),
     rows: commissions.map((c) => ({
       id: c.id,
       orderId: c.orderId,
@@ -67,8 +86,10 @@ export async function getEarnings(creatorId: string) {
       reversedMinor: c.reversedMinor,
       status: c.status,
       currency: c.currency,
-      // Seed rows have fake PayPal IDs and can't be refunded for real.
-      refundable: ["CAPTURED", "PARTIALLY_REFUNDED"].includes(c.order.status) && !c.order.paypalCaptureId?.startsWith("SEED-"),
+      // Seeded and demo-simulated sales have fake PayPal IDs and can't be refunded for real.
+      refundable:
+        ["CAPTURED", "PARTIALLY_REFUNDED"].includes(c.order.status) &&
+        !/^(SEED|SIM)-/.test(c.order.paypalCaptureId ?? ""),
     })),
     timeline: timeline.map((e) => ({
       id: e.id,

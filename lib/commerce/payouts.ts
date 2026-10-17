@@ -4,6 +4,8 @@ import { prisma } from "../db";
 import { sumMinor, toPayPalValue } from "../money";
 import { paypal, type PayoutItem } from "../paypal/gateway";
 import { PayPalApiError } from "../paypal/http";
+import { formatMoney } from "../money";
+import { notify } from "../notify";
 import { commissionMachine } from "../state/commission";
 import { audit, lockRow } from "./db";
 import { commissionStatusForPayoutItem, RETRYABLE_PAYOUT_STATES } from "./payout-status";
@@ -132,6 +134,14 @@ export async function submitBatch(batchId: string): Promise<void> {
 }
 
 async function failBatch(batchId: string, reason: string) {
+  const first = await prisma.commission.findFirst({ where: { payoutBatchId: batchId } });
+  if (first) {
+    void notify(first.creatorId, "payout.failed", {
+      title: "Payout didn't go through",
+      body: `PayPal rejected the payout (${reason}). Your commissions are safe and will be retried.`,
+      data: { batchId, reason },
+    });
+  }
   await prisma.$transaction(async (tx) => {
     await tx.payoutBatch.update({ where: { id: batchId }, data: { status: "FAILED_LOCAL" } });
     const commissions = await tx.commission.findMany({ where: { payoutBatchId: batchId, status: "PAYOUT_SENT" } });
@@ -177,6 +187,7 @@ export async function settlePayoutItem(
   if (!commissionId) return;
   const target = commissionStatusForPayoutItem(item.transaction_status ?? fallbackStatus);
 
+  let outcome: { creatorId: string; status: string; netMinor: number; currency: string } | null = null;
   await prisma.$transaction(async (tx) => {
     const c = await tx.commission.findUnique({ where: { id: commissionId }, include: { payoutBatch: true } });
     if (!c || c.payoutBatch?.paypalBatchId !== item.payout_batch_id) return;
@@ -187,6 +198,7 @@ export async function settlePayoutItem(
     const t = commissionMachine.transition(c.status, target);
     if (t.kind !== "applied") return;
     await tx.commission.update({ where: { id: c.id }, data: { status: target } });
+    outcome = { creatorId: c.creatorId, status: target, netMinor: c.amountMinor - c.reversedMinor, currency: c.currency };
     await audit(tx, {
       entityType: "Commission",
       entityId: c.id,
@@ -200,4 +212,19 @@ export async function settlePayoutItem(
       await audit(tx, { entityType: "Commission", entityId: c.id, type: "commission.clawback_recorded", source: "system", payload: { reversedMinor: c.reversedMinor } });
     }
   });
+
+  const o = outcome as { creatorId: string; status: string; netMinor: number; currency: string } | null;
+  if (o?.status === "PAID") {
+    void notify(o.creatorId, "commission.paid", {
+      title: "Commission paid 🎉",
+      body: `${formatMoney(o.netMinor, o.currency)} was sent to your PayPal account.`,
+      data: { commissionId, amountMinor: o.netMinor, currency: o.currency },
+    });
+  } else if (o && (o.status === "FAILED" || o.status === "RETURNED")) {
+    void notify(o.creatorId, "payout.failed", {
+      title: "A payout didn't land",
+      body: `PayPal reported ${o.status.toLowerCase()} for ${formatMoney(o.netMinor, o.currency)}. It will be retried on your next payout.`,
+      data: { commissionId, status: o.status },
+    });
+  }
 }

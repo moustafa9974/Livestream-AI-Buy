@@ -26,6 +26,8 @@ Source of truth: [docs/SPEC.md](docs/SPEC.md). If the spec and official docs dis
 - Matching/rail: `lib/search` (Postgres + Elastic backends), `lib/matching` (score + two-pass match), `lib/channel3`, `lib/rail.ts`, SSE at `/api/live/[slug]/rail`. See docs/MATCHING.md. After a Prisma migration, restart `npm run dev` (stale client otherwise).
 - Quota-costing calls go through `lib/budget.ts` `consume()` first.
 - Dev DB is Neon (free). DATABASE_URL may be the pooled URL; prisma.config.ts derives the direct URL for migrations (or set DIRECT_DATABASE_URL).
+- Studio/sponsors: notifications + Zapier `lib/notify.ts`, assistant `lib/assistant/*` (Gemini tools + PayPal Agent Toolkit, read-only), recap `lib/recap.ts`, KERNEL `lib/kernel/watcher.ts`, demo panel `app/api/demo`, runtime overrides `lib/settings.ts`, seed logic `lib/demo/seed.ts`. E2E: `npm run test:e2e`.
+- Dev server weirdness (every page reload-looping with "could not finish this Suspense boundary", or a stale Prisma client after a migration): stop `npm run dev`, delete `.next/`, restart. Happened after moving route files + migrating while the server ran.
 - Shell: Windows. The project folder name has spaces, so quote paths.
 
 ## Commands
@@ -46,6 +48,6 @@ npm run typecheck && npm run lint
 - [~] **2. PayPal end-to-end.** (code + tests done; live sandbox run pending keys) Typed client (token cache, idempotency), orders create/capture, checkout drawer (JS SDK v6), refunds, commission ledger, Payouts + status, verified idempotent webhooks, audit timeline, minimal earnings + Pay me now.
 - [~] **3. Vision pipeline.** (code + tests done; Gemini + recorded demo video pending) Client frame capture (upload + screen), dHash filter, Gemini structured output, Ollama/Claude adapters, tracker/stabilization, demo cache, budget degradation.
 - [~] **4. Matching & live rail.** (code + tests done; browser check after dev-server restart; Channel3 key + Elastic pending) Elastic hybrid (+ Postgres fallback), Channel3 similar + price compare, SSE rail, viewer page, attribution.
-- [ ] **5. Studio & sponsors.** Go live, detections mgmt, AG Grid, Bryntum, assistant + Agent Toolkit, Zapier, recap page, KERNEL source with caps.
+- [~] **5. Studio & sponsors.** (built + tested; KERNEL/Zapier/Channel3/Elastic need keys for live tests) Go live, detections mgmt, AG Grid, Bryntum, assistant + Agent Toolkit, Zapier, recap page, KERNEL source with caps.
 - [ ] **6. Deploy.** Astropods watcher, Render Blueprint, Neon prod, prod webhooks, health check.
 - [ ] **7. Polish & docs.** Playwright E2E, Postman, README, ARCHITECTURE/SPONSORS/DEMO_SCRIPT/FREE_TIER, MIT, a11y/Lighthouse, secret scan.

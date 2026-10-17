@@ -13,7 +13,7 @@ export default function LivePage(props: PageProps<"/live/[creatorSlug]">) {
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 py-6">
       <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
-        <LiveContent params={props.params} />
+        <LiveContent params={props.params} searchParams={props.searchParams} />
       </Suspense>
     </main>
   );
@@ -31,12 +31,24 @@ function videoSourceFor(stream: { videoAssetUrl: string | null; sourceType: stri
   return { kind: "none" };
 }
 
-async function LiveContent({ params }: { params: PageProps<"/live/[creatorSlug]">["params"] }) {
+async function LiveContent({
+  params,
+  searchParams,
+}: {
+  params: PageProps<"/live/[creatorSlug]">["params"];
+  searchParams: PageProps<"/live/[creatorSlug]">["searchParams"];
+}) {
   await connection();
   const { creatorSlug } = await params;
   const creator = await prisma.creator.findUnique({ where: { slug: creatorSlug } });
   if (!creator) notFound();
-  const stream = await currentStreamFor(creator.id);
+  // ?stream=<id> opens a specific (e.g. ended) stream as a shoppable replay.
+  const requested = (await searchParams).stream;
+  const replay =
+    typeof requested === "string"
+      ? await prisma.stream.findFirst({ where: { id: requested, creatorId: creator.id, scheduledFor: null } })
+      : null;
+  const stream = replay ?? (await currentStreamFor(creator.id));
   if (!stream) return <p>{creator.displayName} hasn&apos;t streamed yet.</p>;
 
   const env = getEnv();

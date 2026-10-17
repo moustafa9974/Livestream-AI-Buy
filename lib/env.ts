@@ -44,6 +44,7 @@ const schema = z.object({
   // Per-model attempt limit; VISION_TIMEOUT_MS caps the whole frame across fallbacks.
   GEMINI_ATTEMPT_TIMEOUT_MS: int(9_000),
   GEMINI_TEXT_MODEL: z.string().default("gemini-3.5-flash-lite"),
+  GEMINI_TEXT_FALLBACK_MODELS: z.string().default("gemini-3.1-flash-lite,gemini-3.5-flash"),
   GEMINI_EMBEDDING_MODEL: z.string().default("gemini-embedding-001"),
   EMBEDDING_DIM: int(768),
   GEMINI_MAX_RPM: int(8),

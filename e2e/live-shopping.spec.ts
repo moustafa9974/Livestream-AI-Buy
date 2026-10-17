@@ -41,7 +41,7 @@ test("screen share of mugs becomes a buyable card for viewers", async ({ browser
   for (const p of [creator, viewer]) p.on("console", (m) => m.type() === "error" && consoleErrors.push(m.text()));
 
   await fakeScreenShare(creator);
-  await creator.goto("/studio/live");
+  await creator.goto("/studio");
   await creator.getByRole("button", { name: "Share screen / OBS" }).click();
   await creator.getByRole("checkbox").check();
   const started = Date.now();

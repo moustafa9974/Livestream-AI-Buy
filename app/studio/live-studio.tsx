@@ -4,15 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { TickerPanel } from "@/components/studio/ticker-panel";
 import { useFrameSampler } from "@/components/studio/use-frame-sampler";
+import { Input } from "@/components/ui/input";
 import type { DetectionView } from "@/lib/vision/process-frame";
 
-type Source = "upload" | "screen";
+type Source = "upload" | "screen" | "kernel";
 
 interface Props {
   stream: { id: string; title: string; status: string; frameIntervalSec: number; videoAssetUrl: string | null };
   initialDetections: DetectionView[];
   creatorName: string;
+  creatorSlug: string;
+  kernel: { enabled: boolean; reason: string | null; liveViewUrl: string | null; running: boolean };
   ai: { provider: string; enabled: boolean; reason: string | null; demoCache: boolean };
   tuning: { minChangeDistance: number; maxStaleSec: number };
 }
@@ -24,26 +29,49 @@ const STATE_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
   hidden: "secondary",
 };
 
-export function LiveStudio({ stream, initialDetections, creatorName, ai, tuning }: Props) {
+export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug, kernel, ai, tuning }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [source, setSource] = useState<Source | null>(null);
+  const [source, setSource] = useState<Source | null>(kernel.running ? "kernel" : null);
+  const [kernelUrl, setKernelUrl] = useState("");
+  const [liveView, setLiveView] = useState<string | null>(kernel.running ? kernel.liveViewUrl : null);
+  const [kernelBusy, setKernelBusy] = useState(false);
+  const [polled, setPolled] = useState<DetectionView[] | null>(null);
+  const [ended, setEnded] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
   const [live, setLive] = useState(stream.status === "live");
   // Creator edits apply instantly; the next frame response confirms them from the server.
   const [overrides, setOverrides] = useState<Record<string, DetectionView["state"]>>({});
+  const [renamed, setRenamed] = useState<Record<string, string>>({});
   const [aspect, setAspect] = useState(16 / 9);
   const liveSince = useRef(0);
 
   const sampler = useFrameSampler(videoRef, {
     streamId: stream.id,
-    active: live && source !== null,
+    active: live && (source === "upload" || source === "screen"),
     getTimestamp: () =>
       source === "screen" ? (Date.now() - liveSince.current) / 1000 : (videoRef.current?.currentTime ?? 0),
     baseIntervalSec: stream.frameIntervalSec,
     minChangeDistance: tuning.minChangeDistance,
     maxStaleSec: tuning.maxStaleSec,
   });
+
+  // KERNEL frames are produced server-side, so poll detections instead of sampling here.
+  useEffect(() => {
+    if (!live || source !== "kernel") return;
+    let stop = false;
+    const load = () =>
+      fetch(`/api/streams/${stream.id}/detections`)
+        .then((r) => r.json())
+        .then((d: { detections: DetectionView[] }) => !stop && setPolled(d.detections))
+        .catch(() => {});
+    void load();
+    const t = setInterval(load, 4000);
+    return () => {
+      stop = true;
+      clearInterval(t);
+    };
+  }, [live, source, stream.id]);
 
   // Release object URLs / screen tracks when replaced or unmounted.
   useEffect(() => () => {
@@ -92,10 +120,57 @@ export function LiveStudio({ stream, initialDetections, creatorName, ai, tuning 
     if (!res.ok) return toast.error("Couldn't change stream status");
     liveSince.current = Date.now();
     setLive(start);
+    if (!start) {
+      setEnded(true);
+      setLiveView(null);
+      toast.success("Stream ended. Your recap is being written");
+    }
     if (start) {
       toast.success("You're live. Seen is watching for products");
       videoRef.current?.play().catch(() => {});
     }
+  }
+
+  async function startKernel() {
+    setKernelBusy(true);
+    try {
+      const res = await fetch(`/api/streams/${stream.id}/kernel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: kernelUrl, consentOwnContent: true }),
+      });
+      const data = (await res.json()) as { liveViewUrl?: string | null; error?: string; reason?: string };
+      if (!res.ok) throw new Error(data.error ?? data.reason ?? "KERNEL failed");
+      stopScreen();
+      setVideoUrl(null);
+      setSource("kernel");
+      setLive(true);
+      setLiveView(data.liveViewUrl ?? null);
+      toast.success("A KERNEL cloud browser is watching your stream");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "KERNEL failed");
+    } finally {
+      setKernelBusy(false);
+    }
+  }
+
+  async function stopKernel() {
+    await fetch(`/api/streams/${stream.id}/kernel`, { method: "DELETE" });
+    setLiveView(null);
+    setSource(null);
+  }
+
+  async function rename(d: DetectionView) {
+    const label = window.prompt("What is this product? (e.g. 'wireless clip-on mic')", d.label)?.trim();
+    if (!label || label === d.label) return;
+    const res = await fetch(`/api/detections/${d.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ label }),
+    });
+    if (!res.ok) return toast.error("Rename failed");
+    setRenamed((r) => ({ ...r, [d.id]: label.toLowerCase() }));
+    toast.success("Corrected. Re-matching products…");
   }
 
   async function setState(id: string, state: "visible" | "pinned" | "hidden") {
@@ -109,7 +184,8 @@ export function LiveStudio({ stream, initialDetections, creatorName, ai, tuning 
   }
 
   const last = sampler.last;
-  const detections = (last?.detections ?? initialDetections).map((d) => (overrides[d.id] ? { ...d, state: overrides[d.id] } : d));
+  const base = source === "kernel" ? (polled ?? initialDetections) : (last?.detections ?? initialDetections);
+  const detections = base.map((d) => ({ ...d, state: overrides[d.id] ?? d.state, label: renamed[d.id] ?? d.label }));
   const boxes = detections.filter((d) => d.inFrame && d.bbox && d.state !== "hidden");
   const shown = detections.filter((d) => d.state !== "candidate");
   const candidates = detections.filter((d) => d.state === "candidate");
@@ -123,6 +199,14 @@ export function LiveStudio({ stream, initialDetections, creatorName, ai, tuning 
             <h1 className="text-2xl font-bold tracking-tight">{stream.title}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Link href={`/live/${creatorSlug}`} target="_blank" className="text-sm underline-offset-2 hover:underline">
+              Viewer page ↗
+            </Link>
+            {ended && (
+              <Link href={`/recap/${stream.id}`} className="text-sm underline-offset-2 hover:underline">
+                Recap ↗
+              </Link>
+            )}
             {live ? <Badge>● Live</Badge> : <Badge variant="outline">Offline</Badge>}
             {last?.mode === "saver" && <Badge variant="secondary">Free-tier saver mode</Badge>}
             {last?.mode === "cache_only" && <Badge variant="secondary">Cache-only mode</Badge>}
@@ -168,6 +252,16 @@ export function LiveStudio({ stream, initialDetections, creatorName, ai, tuning 
               Pick a source below to start
             </p>
           )}
+          {source === "kernel" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center text-sm text-white/90">
+              <p>A KERNEL cloud browser is watching your stream page and sending frames.</p>
+              {liveView && (
+                <a href={liveView} target="_blank" rel="noopener noreferrer" className="rounded-md bg-white px-3 py-1.5 font-medium text-black">
+                  Open KERNEL live view ↗
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -179,6 +273,32 @@ export function LiveStudio({ stream, initialDetections, creatorName, ai, tuning 
           <Button variant="outline" onClick={pickScreen}>Share screen / OBS</Button>
         </div>
 
+        <div className="space-y-2 rounded-xl border p-4">
+          <p className="text-sm font-medium">Or watch your own stream URL with a KERNEL cloud browser</p>
+          {kernel.enabled ? (
+            source === "kernel" ? (
+              <Button variant="outline" onClick={stopKernel}>Stop KERNEL browser</Button>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                <Input
+                  type="url"
+                  value={kernelUrl}
+                  onChange={(e) => setKernelUrl(e.target.value)}
+                  placeholder="https://www.twitch.tv/yourchannel"
+                  aria-label="Your stream URL"
+                  className="min-w-60 flex-1"
+                />
+                <Button onClick={startKernel} disabled={!consent || !kernelUrl.startsWith("https://") || kernelBusy}>
+                  {kernelBusy ? "Starting…" : "Watch with KERNEL"}
+                </Button>
+              </div>
+            )
+          ) : (
+            <p className="text-xs text-muted-foreground">KERNEL unavailable ({kernel.reason}). Screen sharing and uploads still work.</p>
+          )}
+          <p className="text-xs text-muted-foreground">Only your own channel. Capped per session and per day to protect credits; stops when the stream ends.</p>
+        </div>
+
         <div className="flex flex-wrap items-center gap-4 rounded-xl border p-4">
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} disabled={live} />
@@ -187,7 +307,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, ai, tuning 
           {live ? (
             <Button variant="destructive" onClick={() => goLive(false)}>End stream</Button>
           ) : (
-            <Button onClick={() => goLive(true)} disabled={!consent || !source}>Go live</Button>
+            <Button onClick={() => goLive(true)} disabled={!consent || !source || source === "kernel"}>Go live</Button>
           )}
         </div>
 
@@ -210,8 +330,9 @@ export function LiveStudio({ stream, initialDetections, creatorName, ai, tuning 
       </section>
 
       <aside className="space-y-4">
+        <TickerPanel />
         <h2 className="font-semibold">Detected products</h2>
-        {shown.length === 0 && <p className="text-sm text-muted-foreground">Nothing confirmed yet. An item shows after it&apos;s seen twice.</p>}
+        {shown.length === 0 && <p className="text-sm text-muted-foreground">Nothing confirmed yet. Items show once the AI is sure (usually within a few seconds).</p>}
         <ul className="space-y-2">
           {shown.map((d) => (
             <li key={d.id} className="flex items-center justify-between gap-2 rounded-lg border p-3">
@@ -223,6 +344,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, ai, tuning 
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <Badge variant={STATE_VARIANT[d.state]}>{d.state}</Badge>
+                <Button size="sm" variant="ghost" onClick={() => rename(d)} aria-label={`Correct ${d.label}`}>Edit</Button>
                 {d.state !== "pinned" && d.state !== "hidden" && (
                   <Button size="sm" variant="ghost" onClick={() => setState(d.id, "pinned")} aria-label={`Pin ${d.label}`}>Pin</Button>
                 )}

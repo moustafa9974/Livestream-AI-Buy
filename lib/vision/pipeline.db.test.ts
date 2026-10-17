@@ -47,7 +47,13 @@ class FakeVision implements VisionProvider {
 }
 let fake: FakeVision;
 
+const savedRpm = process.env.GEMINI_MAX_RPM;
+
 beforeAll(async () => {
+  // The fake AI still goes through the real budget counter; many frames in one minute
+  // would otherwise trip the per-minute limit and make later tests flaky.
+  process.env.GEMINI_MAX_RPM = "1000";
+  resetEnvCache();
   await prisma.creator.create({ data: { id: creatorId, slug: `test-v-${tag}`, displayName: "Vision Test", payoutEmail: "x@example.com" } });
   await prisma.stream.create({ data: { id: streamId, creatorId, title: "Vision test", sourceType: "upload", status: "live" } });
 });
@@ -59,6 +65,9 @@ beforeEach(() => {
 
 afterAll(async () => {
   setVisionProviderForTests(undefined);
+  if (savedRpm === undefined) delete process.env.GEMINI_MAX_RPM;
+  else process.env.GEMINI_MAX_RPM = savedRpm;
+  resetEnvCache();
   const dets = await prisma.detection.findMany({ where: { streamId }, select: { id: true } });
   await prisma.auditEvent.deleteMany({ where: { entityId: { in: dets.map((d) => d.id) } } });
   await prisma.detection.deleteMany({ where: { streamId } });

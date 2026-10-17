@@ -94,6 +94,7 @@ export async function applyRefund(args: { orderId: string; refund: PayPalRefund;
         payload: { reversedMinor: delta, totalReversedMinor: reversedMinor },
       });
     }
-    return { applied: true, order };
+    // Return the order as it is now, not the snapshot from before this refund.
+    return { applied: true, order: { ...order, status: to, refundedMinor: refundedTotal } };
   });
 }

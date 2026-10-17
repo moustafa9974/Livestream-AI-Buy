@@ -171,11 +171,11 @@ export function setVisionProviderForTests(p: VisionProvider | null | undefined):
   override = p;
 }
 
-/** Picks the configured provider; null when it isn't usable (missing key). */
-export function selectProvider(): VisionProvider | null {
+/** Picks the configured provider (or the demo panel's override); null when unusable. */
+export function selectProvider(name?: "gemini" | "ollama" | "claude"): VisionProvider | null {
   if (override !== undefined) return override;
   const env = getEnv();
-  switch (env.AI_PROVIDER) {
+  switch (name ?? env.AI_PROVIDER) {
     case "gemini":
       return env.GEMINI_API_KEY ? geminiProvider() : null;
     case "ollama":

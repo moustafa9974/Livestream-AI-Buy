@@ -14,19 +14,20 @@ datasource db {
 // ───────────── Creators & streams ─────────────
 
 model Creator {
-  id                String    @id @default(cuid())
-  slug              String    @unique
+  id                String   @id @default(cuid())
+  slug              String   @unique
   displayName       String
   avatarUrl         String?
   payoutEmail       String // sandbox personal account email
-  payoutCurrency    String    @default("USD")
-  commissionRateBps Int       @default(1000) // 1000 = 10%
-  language          String    @default("en")
+  payoutCurrency    String   @default("USD")
+  commissionRateBps Int      @default(1000) // 1000 = 10%
+  language          String   @default("en")
   zapierWebhookUrl  String?
-  createdAt         DateTime  @default(now())
+  createdAt         DateTime @default(now())
 
-  streams     Stream[]
-  commissions Commission[]
+  streams       Stream[]
+  commissions   Commission[]
+  notifications Notification[]
 }
 
 enum StreamSourceType {
@@ -43,24 +44,28 @@ enum StreamStatus {
 }
 
 model Stream {
-  id                  String           @id @default(cuid())
-  creatorId           String
-  title               String
-  sourceType          StreamSourceType
-  sourceUrl           String?
-  videoAssetUrl       String?
-  status              StreamStatus     @default(idle)
-  consentOwnContent   Boolean          @default(false)
-  consentAt           DateTime?
-  startedAt           DateTime?
-  endedAt             DateTime?
-  frameIntervalSec    Int              @default(4)
-  createdAt           DateTime         @default(now())
+  id                String           @id @default(cuid())
+  creatorId         String
+  title             String
+  sourceType        StreamSourceType
+  sourceUrl         String?
+  videoAssetUrl     String?
+  status            StreamStatus     @default(idle)
+  consentOwnContent Boolean          @default(false)
+  consentAt         DateTime?
+  startedAt         DateTime?
+  endedAt           DateTime?
+  frameIntervalSec  Int              @default(4)
+  scheduledFor      DateTime? // upcoming streams on the schedule page
+  recapText         String? // AI-written recap, generated when the stream ends
+  recapAt           DateTime?
+  createdAt         DateTime         @default(now())
 
-  creator      Creator       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  frames       Frame[]
-  detections   Detection[]
-  attributions Attribution[]
+  creator        Creator         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  frames         Frame[]
+  detections     Detection[]
+  attributions   Attribution[]
+  kernelSessions KernelSession[]
 
   @@index([creatorId])
 }
@@ -89,22 +94,22 @@ enum DetectionState {
 }
 
 model Detection {
-  id               String                       @id @default(cuid())
+  id               String                      @id @default(cuid())
   streamId         String
   label            String
   category         String
-  attributes       Json                         @default("{}")
+  attributes       Json                        @default("{}")
   embedding        Unsupported("vector(768)")?
   bestFrameId      String?
   bbox             Json? // [x, y, w, h] normalized 0–1
   confidence       Float
-  hits             Int                          @default(1)
+  hits             Int                         @default(1)
   firstSeenSec     Float
   lastSeenSec      Float
-  state            DetectionState               @default(candidate)
-  mentionedInAudio Boolean                      @default(false)
-  createdAt        DateTime                     @default(now())
-  updatedAt        DateTime                     @default(now()) @updatedAt
+  state            DetectionState              @default(candidate)
+  mentionedInAudio Boolean                     @default(false)
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @default(now()) @updatedAt
 
   stream       Stream         @relation(fields: [streamId], references: [id], onDelete: Cascade)
   matches      ProductMatch[]
@@ -330,9 +335,9 @@ model AuditEvent {
 }
 
 model UsageCounter {
-  provider String
-  window   String // e.g. "min:2026-10-08T16:12" or "day:2026-10-08" (UTC)
-  count    Int      @default(0)
+  provider  String
+  window    String // e.g. "min:2026-10-08T16:12" or "day:2026-10-08" (UTC)
+  count     Int      @default(0)
   updatedAt DateTime @updatedAt
 
   @@id([provider, window])
@@ -349,4 +354,40 @@ model ApiCache {
   createdAt DateTime  @default(now())
 
   @@index([kind])
+}
+
+// In-app notification center: always written, and the fallback when a creator has no
+// Zapier hook (or Zapier is off/down). Not in the original spec model list.
+model Notification {
+  id           String    @id @default(cuid())
+  creatorId    String
+  type         String // sale.created | commission.paid | payout.failed | stream.recap | budget.saver_mode
+  title        String
+  body         String
+  payload      Json      @default("{}")
+  zapierStatus String? // delivered | failed | skipped
+  readAt       DateTime?
+  createdAt    DateTime  @default(now())
+
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, createdAt])
+}
+
+// One KERNEL cloud browser watching a creator's own stream URL. Tracked so caps
+// (minutes per session, sessions per day) and the kill switch can be enforced.
+model KernelSession {
+  id              String    @id @default(cuid())
+  streamId        String
+  kernelSessionId String    @unique
+  liveViewUrl     String?
+  status          String // running | stopped | failed
+  stopReason      String?
+  framesSent      Int       @default(0)
+  startedAt       DateTime  @default(now())
+  endedAt         DateTime?
+
+  stream Stream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@index([status])
 }
