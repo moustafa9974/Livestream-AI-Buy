@@ -22,7 +22,8 @@
     "demo:cache:import": "tsx scripts/demo-cache.ts import",
     "catalog:embed": "tsx -e \"import('./lib/search/catalog.ts').then(m=>m.embedCatalog()).then(r=>{console.log(r);process.exit(0)})\"",
     "search:index": "tsx scripts/search-index.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "start:prod": "prisma migrate deploy && next start"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.1",
@@ -66,5 +67,8 @@
     "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": ">=22.12 <23"
   }
 }

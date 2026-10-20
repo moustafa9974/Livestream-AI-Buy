@@ -1,0 +1,36 @@
+# Astropods Spec (RFC-1). Seen's stream watcher: a background agent (no chat UI) that
+# runs the KERNEL capture loop for creators who stream on other platforms.
+# Deploy: see astropods/README.md.
+spec: blueprint/v1
+name: seen-stream-watcher
+
+agent:
+  build:
+    context: ./agent
+    dockerfile: Dockerfile
+  healthcheck:
+    path: /healthz
+    interval: 30s
+    timeout: 5s
+    retries: 3
+  inputs:
+    - name: SEEN_API_URL
+      datatype: string
+      description: Public URL of the Seen app, e.g. https://seen.onrender.com
+    - name: SEEN_WATCHER_TOKEN
+      datatype: string
+      secret: true
+      description: Same value as WATCHER_TOKEN on the Seen app (Bearer token)
+    - name: KERNEL_API_KEY
+      datatype: string
+      secret: true
+      description: KERNEL API key (hackathon credits)
+    - name: POLL_SECONDS
+      datatype: number
+      default: "5"
+      optional: true
+      description: How often to ask Seen for streams to watch
+
+dev:
+  command: npm start
+  watch: [agent]

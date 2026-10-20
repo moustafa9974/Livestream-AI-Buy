@@ -73,6 +73,23 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
     };
   }, [live, source, stream.id]);
 
+  // With the Astropods watcher the live-view link arrives once the agent has started its
+  // browser, so poll for it.
+  useEffect(() => {
+    if (source !== "kernel" || liveView) return;
+    let stop = false;
+    const t = setInterval(() => {
+      fetch(`/api/streams/${stream.id}/kernel`)
+        .then((r) => r.json())
+        .then((d: { session?: { liveViewUrl: string | null } | null }) => !stop && d.session?.liveViewUrl && setLiveView(d.session.liveViewUrl))
+        .catch(() => {});
+    }, 4000);
+    return () => {
+      stop = true;
+      clearInterval(t);
+    };
+  }, [source, liveView, stream.id]);
+
   // Release object URLs / screen tracks when replaced or unmounted.
   useEffect(() => () => {
     if (videoUrl?.startsWith("blob:")) URL.revokeObjectURL(videoUrl);
@@ -139,14 +156,14 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: kernelUrl, consentOwnContent: true }),
       });
-      const data = (await res.json()) as { liveViewUrl?: string | null; error?: string; reason?: string };
+      const data = (await res.json()) as { liveViewUrl?: string | null; queued?: boolean; error?: string; reason?: string };
       if (!res.ok) throw new Error(data.error ?? data.reason ?? "KERNEL failed");
       stopScreen();
       setVideoUrl(null);
       setSource("kernel");
       setLive(true);
       setLiveView(data.liveViewUrl ?? null);
-      toast.success("A KERNEL cloud browser is watching your stream");
+      toast.success(data.queued ? "Handed to the Astropods watcher. It will open a KERNEL browser shortly" : "A KERNEL cloud browser is watching your stream");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "KERNEL failed");
     } finally {

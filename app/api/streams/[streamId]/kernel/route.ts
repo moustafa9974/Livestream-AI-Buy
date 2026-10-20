@@ -2,8 +2,9 @@ import { z } from "zod";
 import { errorResponse } from "@/lib/api";
 import { audit } from "@/lib/commerce/db";
 import { prisma } from "@/lib/db";
+import { getEnv } from "@/lib/env";
 import { featureStatus } from "@/lib/flags";
-import { kernelStatus, KernelUnavailable, startKernelWatch, stopKernelForStream } from "@/lib/kernel/watcher";
+import { isPublicHttpsUrl, kernelStatus, KernelUnavailable, startKernelWatch, stopKernelForStream } from "@/lib/kernel/watcher";
 import { getOwnedStream } from "@/lib/studio";
 
 const Body = z.object({
@@ -29,12 +30,19 @@ export async function POST(req: Request, ctx: RouteContext<"/api/streams/[stream
     const s = featureStatus("kernel");
     if (!s.enabled) return Response.json({ error: "KERNEL is unavailable", reason: s.reason }, { status: 503 });
     const body = Body.parse(await req.json());
+    if (!isPublicHttpsUrl(body.url)) return Response.json({ error: "Use the public https:// URL of your own stream page" }, { status: 400 });
 
     const now = new Date();
     await prisma.stream.update({
       where: { id: streamId },
       data: { status: "live", sourceType: "kernel_url", sourceUrl: body.url, consentOwnContent: true, consentAt: now, startedAt: now, endedAt: null },
     });
+    // Astropods runtime: the hosted agent picks the stream up from /api/watcher/assignments
+    // and reports its live-view link back; the studio polls GET for it.
+    if (getEnv().WATCHER_RUNTIME === "astropods") {
+      await audit(prisma, { entityType: "Stream", entityId: streamId, type: "kernel.queued", source: "creator", payload: { runtime: "astropods" } });
+      return Response.json({ queued: true, liveViewUrl: null });
+    }
     const started = await startKernelWatch(streamId, body.url);
     await audit(prisma, { entityType: "Stream", entityId: streamId, type: "kernel.started", source: "kernel", payload: { sessionId: started.sessionId } });
     return Response.json(started);

@@ -9,6 +9,7 @@ export default defineConfig({
   },
   test: {
     include: ["**/*.db.test.ts"],
+    setupFiles: ["lib/test-db-setup.ts"],
     exclude: ["node_modules", ".next"],
     environment: "node",
     fileParallelism: false,

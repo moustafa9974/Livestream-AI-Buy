@@ -1,0 +1,62 @@
+# Render Blueprint: one FREE web service (no paid workers, no Render Postgres).
+# Database = Neon (free, doesn't expire). Region Ohio = same AWS region as Neon
+# us-east-2, so DB round trips are ~1-5 ms instead of hundreds.
+# Free services sleep after 15 min without traffic; the first request then takes
+# about a minute (see docs/DEPLOY.md for the "wake it up" tip).
+services:
+  - type: web
+    name: seen
+    runtime: node
+    plan: free
+    region: ohio
+    # Dev dependencies (TypeScript, Tailwind, Prisma CLI) are needed to build, so
+    # NODE_ENV is NOT set to production here; `next start` sets it at runtime.
+    buildCommand: npm ci && npm run build
+    # Migrations run at start (free instances don't get a pre-deploy step we rely on).
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: "22.12.0"
+      # ── Required ──
+      - key: DATABASE_URL
+        sync: false # Neon production branch, pooled URL
+      - key: APP_URL
+        sync: false # https://<your-service>.onrender.com
+      # ── PayPal sandbox ──
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false # webhook pointing at https://<service>.onrender.com/api/webhooks/paypal
+      - key: DEMO_CREATOR_PAYOUT_EMAIL
+        sync: false
+      # ── AI ──
+      - key: GEMINI_API_KEY
+        sync: false
+      # ── Demo ──
+      - key: DEMO_MODE
+        value: "true" # judges get the studio with zero signup
+      - key: DEMO_CACHE
+        value: "true"
+      - key: DEMO_PANEL_KEY
+        generateValue: true # protects reset/simulate on the public demo panel
+      - key: COMMISSION_HOLD_HOURS
+        value: "0"
+      # ── Optional sponsors (leave empty to keep them "unavailable") ──
+      - key: CHANNEL3_API_KEY
+        sync: false
+      - key: KERNEL_API_KEY
+        sync: false
+      - key: KERNEL_ENABLED
+        value: "false"
+      - key: WATCHER_RUNTIME
+        value: "local" # set to "astropods" once the watcher agent is deployed
+      - key: WATCHER_TOKEN
+        generateValue: true # shared secret for the Astropods watcher agent
+      - key: ZAPIER_ENABLED
+        value: "false"
+      - key: BRYNTUM_ENABLED
+        value: "false"

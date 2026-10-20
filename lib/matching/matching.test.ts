@@ -41,6 +41,15 @@ describe("match scoring (cases from the 2026-10-10 calibration run)", () => {
     expect(classify(scoreCandidate(seen, mic, null), TEXT)).toBeNull();
   });
 
+  it("a different kind of product is never 'similar', even with close embeddings", () => {
+    const seen = { label: "wireless keyboard", category: "electronics/keyboard", attributes: { color: "white" } };
+    const mic = { title: "Clip-On Wireless Mic Kit", category: "electronics/microphone", attributes: { color: "black", type: "wireless lavalier" } };
+    expect(classify(scoreCandidate(seen, mic, 0.9), VEC)).toBeNull();
+    // A naming variant of the same kind of product still matches.
+    const sweat = { label: "black sweatshirt", category: "apparel/sweatshirt", attributes: { color: "black" } };
+    expect(classify(scoreCandidate(sweat, hoodieBlack, 0.93), VEC)).not.toBeNull();
+  });
+
   it("text-only mode still finds the right product", () => {
     const s = scoreCandidate(seenHoodie, hoodieBlack, null);
     expect(classify(s, TEXT)).toBe("exact");

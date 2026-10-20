@@ -62,13 +62,16 @@ export function featureStatus(feature: Feature, env: Env = getEnv()): FeatureSta
         [env.CHANNEL3_API_KEY, "CHANNEL3_API_KEY"],
       ]);
     case "kernel":
+      // With the Astropods watcher, the KERNEL key lives in the agent; Seen only needs
+      // the shared token the agent authenticates with.
+      if (env.WATCHER_RUNTIME === "astropods") {
+        return needs(env.KERNEL_ENABLED, "KERNEL_ENABLED", [[env.WATCHER_TOKEN, "WATCHER_TOKEN"]]);
+      }
       return needs(env.KERNEL_ENABLED, "KERNEL_ENABLED", [[env.KERNEL_API_KEY, "KERNEL_API_KEY"]]);
     case "elastic":
       return needs(env.ELASTIC_ENABLED, "ELASTIC_ENABLED", [[env.ELASTIC_URL, "ELASTIC_URL"]]);
     case "astropods":
-      return needs(env.WATCHER_RUNTIME === "astropods", "WATCHER_RUNTIME=astropods", [
-        [env.ASTROPODS_API_KEY, "ASTROPODS_API_KEY"],
-      ]);
+      return needs(env.WATCHER_RUNTIME === "astropods", "WATCHER_RUNTIME=astropods", [[env.WATCHER_TOKEN, "WATCHER_TOKEN"]]);
     case "zapier":
       // Per-creator webhook URLs live in the DB; this is just the global switch.
       return needs(env.ZAPIER_ENABLED, "ZAPIER_ENABLED", []);

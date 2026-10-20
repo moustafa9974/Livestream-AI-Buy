@@ -45,9 +45,40 @@ export function coverage(seen: Seen, c: Candidate): number {
 
 /** Same leaf category, or the candidate mentions the last word of the seen label. */
 export function headNounMatch(seen: Seen, c: Candidate): boolean {
-  if (leaf(seen.category) && leaf(seen.category) === leaf(c.category)) return true;
-  const head = searchWords(seen.label).at(-1);
-  return !!head && words(`${c.title} ${c.category.replaceAll("/", " ")}`).has(head);
+  const seenKinds = kinds([leaf(seen.category), searchWords(seen.label).at(-1) ?? ""]);
+  const candKinds = kinds([leaf(c.category), ...words(`${c.title} ${c.category.replaceAll("/", " ")}`)]);
+  return [...seenKinds].some((k) => candKinds.has(k));
+}
+
+/**
+ * Product kinds that shoppers treat as the same thing. Keeps "sweatshirt" → Hoodie a
+ * match while "wireless keyboard" → Wireless Mic stays out (embeddings alone can't
+ * tell those apart: both scored ~0.9 cosine in testing).
+ */
+const KIND_SYNONYMS: string[][] = [
+  ["hoodie", "sweatshirt", "pullover", "hooded"],
+  ["tee", "t-shirt", "tshirt", "shirt"],
+  ["sneaker", "trainer", "shoe", "footwear"],
+  ["mug", "cup", "coffee-mug"],
+  ["lamp", "light", "desk-lamp"],
+  ["microphone", "mic", "lavalier", "lav"],
+  ["sunglasses", "sunglass", "glasses", "shades", "eyewear"],
+  ["headphone", "headset", "earphone"],
+  ["cap", "hat", "baseball-cap"],
+  ["beanie", "knit-hat"],
+  ["tumbler", "bottle", "drinkware"],
+  ["planter", "pot"],
+];
+const KIND_INDEX = new Map(KIND_SYNONYMS.flatMap((group, i) => group.map((w) => [w, `kind${i}`] as const)));
+
+function kinds(terms: string[]): Set<string> {
+  const out = new Set<string>();
+  for (const raw of terms) {
+    const t = raw.toLowerCase();
+    if (!t) continue;
+    out.add(KIND_INDEX.get(t) ?? t);
+  }
+  return out;
 }
 
 export function scoreCandidate(seen: Seen, c: Candidate, vectorScore: number | null) {
@@ -71,7 +102,7 @@ export function scoreCandidate(seen: Seen, c: Candidate, vectorScore: number | n
   } else if (seenLeaf && candLeaf && seenLeaf === candLeaf) {
     score += 0.03;
     reasons.push("same_leaf_category");
-  } else if (seenLeaf && candLeaf && coverage(seen, c) < 0.5) {
+  } else if (seenLeaf && candLeaf && coverage(seen, c) < 0.5 && !headNounMatch(seen, c)) {
     // Same department, different kind of thing (laptop vs microphone, plant vs tumbler).
     score -= 0.08;
     reasons.push("leaf_mismatch");
@@ -92,15 +123,19 @@ export function scoreCandidate(seen: Seen, c: Candidate, vectorScore: number | n
       reasons.push("color_conflict");
     }
   }
-  return { score: Math.max(0, Math.min(1, score)), colorConflict, coverage: cov, reasons };
+  return { score: Math.max(0, Math.min(1, score)), colorConflict, sameKind: headNounMatch(seen, c), coverage: cov, reasons };
 }
 
-/** "exact" needs the threshold AND no colour conflict; otherwise "similar" or no match. */
+/**
+ * "exact" needs the threshold AND no colour conflict. "similar" also needs the same kind
+ * of product (leaf category or head noun): semantically close but different things,
+ * like a wireless keyboard vs a wireless mic, are not "similar" in a shop.
+ */
 export function classify(
-  s: { score: number; colorConflict: boolean },
+  s: { score: number; colorConflict: boolean; sameKind?: boolean },
   t: MatchThresholds,
 ): "exact" | "similar" | null {
   if (s.score >= t.exact && !s.colorConflict) return "exact";
-  if (s.score >= t.similar) return "similar";
+  if (s.score >= t.similar && s.sameKind !== false) return "similar";
   return null;
 }

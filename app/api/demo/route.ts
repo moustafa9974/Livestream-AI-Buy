@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { after } from "next/server";
@@ -49,8 +50,19 @@ async function liveDemoStream(creatorId: string) {
   return stream;
 }
 
+/** Constant-time check of the optional demo key (public deployments set DEMO_PANEL_KEY). */
+function demoKeyOk(req: Request): boolean {
+  const expected = getEnv().DEMO_PANEL_KEY;
+  if (!expected) return true;
+  const given = req.headers.get("x-demo-key") ?? "";
+  const a = Buffer.from(given);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 export async function POST(req: Request) {
   if (!getEnv().DEMO_MODE) return Response.json({ error: "Demo mode is off" }, { status: 404 });
+  if (!demoKeyOk(req)) return Response.json({ error: "Demo key required", code: "DEMO_KEY" }, { status: 401 });
   try {
     const creator = await getCurrentCreator();
     if (!creator) return Response.json({ error: "Not signed in" }, { status: 401 });

@@ -21,6 +21,8 @@ const schema = z.object({
 
   DEMO_MODE: bool(true),
   DEMO_CACHE: bool(true),
+  // When set, demo-panel actions (reset, simulate…) require this key. Set it in production.
+  DEMO_PANEL_KEY: str,
   COMMISSION_HOLD_HOURS: int(0),
   DEFAULT_COMMISSION_BPS: int(1000),
 
@@ -91,6 +93,8 @@ const schema = z.object({
   ELASTIC_URL: str,
   ELASTIC_API_KEY: str,
   WATCHER_RUNTIME: z.enum(["local", "astropods"]).default("local"),
+  // Shared secret between Seen and the Astropods watcher agent (Bearer token).
+  WATCHER_TOKEN: str,
   ASTROPODS_API_KEY: str,
   ZAPIER_ENABLED: bool(false),
   BRYNTUM_ENABLED: bool(false),

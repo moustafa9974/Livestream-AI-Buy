@@ -22,12 +22,32 @@ export function DemoPanel({ products, holdHours, holdOverridden, aiProvider, ker
     if (confirmText && !confirm(confirmText)) return;
     setBusy(action);
     try {
+      let key = "";
+      try {
+        key = localStorage.getItem("seen-demo-key") ?? "";
+      } catch {
+        // storage blocked: ask each time
+      }
       const res = await fetch("/api/demo", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(key ? { "x-demo-key": key } : {}) },
         body: JSON.stringify({ action, ...extra }),
       });
-      const data = (await res.json()) as Record<string, unknown> & { error?: string };
+      const data = (await res.json()) as Record<string, unknown> & { error?: string; code?: string };
+      if (data.code === "DEMO_KEY") {
+        // Public deployment: ask for the presenter's key once, then retry.
+        const entered = window.prompt("Demo panel key (DEMO_PANEL_KEY):")?.trim();
+        if (entered) {
+          try {
+            localStorage.setItem("seen-demo-key", entered);
+          } catch {
+            // ignore
+          }
+          setBusy(null);
+          return run(action, extra);
+        }
+        throw new Error("Demo key required");
+      }
       if (!res.ok) throw new Error(data.error ?? "Failed");
       toast.success(describe(action, data));
       router.refresh();

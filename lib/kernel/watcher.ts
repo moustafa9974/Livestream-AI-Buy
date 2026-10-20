@@ -197,13 +197,16 @@ export async function killAllKernelSessions(): Promise<number> {
 }
 
 async function killRow(id: string, kernelSessionId: string, reason: string) {
-  if (isEnabled("kernel")) await kernel().browsers.deleteByID(kernelSessionId).catch(() => {});
+  // Locally we own the KERNEL browser and delete it; with the Astropods agent, marking the
+  // row stopped is the signal (the agent polls and deletes its own browser).
+  const env = getEnv();
+  if (env.WATCHER_RUNTIME === "local" && env.KERNEL_API_KEY) await kernel().browsers.deleteByID(kernelSessionId).catch(() => {});
   await prisma.kernelSession.update({ where: { id }, data: { status: "stopped", stopReason: reason, endedAt: new Date() } });
 }
 
 export async function kernelStatus(streamId: string) {
   const row = await prisma.kernelSession.findFirst({ where: { streamId }, orderBy: { startedAt: "desc" } });
   return row
-    ? { running: watches.has(streamId) && row.status === "running", liveViewUrl: row.liveViewUrl, framesSent: row.framesSent, status: row.status, stopReason: row.stopReason }
+    ? { running: (getEnv().WATCHER_RUNTIME === "astropods" || watches.has(streamId)) && row.status === "running", liveViewUrl: row.liveViewUrl, framesSent: row.framesSent, status: row.status, stopReason: row.stopReason }
     : null;
 }

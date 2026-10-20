@@ -27,6 +27,7 @@ Source of truth: [docs/SPEC.md](docs/SPEC.md). If the spec and official docs dis
 - Quota-costing calls go through `lib/budget.ts` `consume()` first.
 - Dev DB is Neon (free). DATABASE_URL may be the pooled URL; prisma.config.ts derives the direct URL for migrations (or set DIRECT_DATABASE_URL).
 - Studio/sponsors: notifications + Zapier `lib/notify.ts`, assistant `lib/assistant/*` (Gemini tools + PayPal Agent Toolkit, read-only), recap `lib/recap.ts`, KERNEL `lib/kernel/watcher.ts`, demo panel `app/api/demo`, runtime overrides `lib/settings.ts`, seed logic `lib/demo/seed.ts`. E2E: `npm run test:e2e`.
+- Deploy: render.yaml (free, Ohio), docs/DEPLOY.md, `npm run start:prod` migrates then starts. Astropods watcher agent in astropods/ (own package; `WATCHER_RUNTIME=astropods`, Bearer `WATCHER_TOKEN`), Seen side in `app/api/watcher/*`.
 - Dev server weirdness (every page reload-looping with "could not finish this Suspense boundary", or a stale Prisma client after a migration): stop `npm run dev`, delete `.next/`, restart. Happened after moving route files + migrating while the server ran.
 - Shell: Windows. The project folder name has spaces, so quote paths.
 
@@ -49,5 +50,5 @@ npm run typecheck && npm run lint
 - [~] **3. Vision pipeline.** (code + tests done; Gemini + recorded demo video pending) Client frame capture (upload + screen), dHash filter, Gemini structured output, Ollama/Claude adapters, tracker/stabilization, demo cache, budget degradation.
 - [~] **4. Matching & live rail.** (code + tests done; browser check after dev-server restart; Channel3 key + Elastic pending) Elastic hybrid (+ Postgres fallback), Channel3 similar + price compare, SSE rail, viewer page, attribution.
 - [~] **5. Studio & sponsors.** (built + tested; KERNEL/Zapier/Channel3/Elastic need keys for live tests) Go live, detections mgmt, AG Grid, Bryntum, assistant + Agent Toolkit, Zapier, recap page, KERNEL source with caps.
-- [ ] **6. Deploy.** Astropods watcher, Render Blueprint, Neon prod, prod webhooks, health check.
+- [~] **6. Deploy.** (render.yaml + Astropods agent ready and tested locally; needs your GitHub/Render/Neon-branch/Astropods accounts to go live) Astropods watcher, Render Blueprint, Neon prod, prod webhooks, health check.
 - [ ] **7. Polish & docs.** Playwright E2E, Postman, README, ARCHITECTURE/SPONSORS/DEMO_SCRIPT/FREE_TIER, MIT, a11y/Lighthouse, secret scan.
