@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { FlaskConical } from "lucide-react";
+import { ProductThumb } from "@/components/app/product-thumb";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { formatMoney } from "@/lib/money";
 import type { PayPalPaymentSession } from "./sdk-types";
@@ -121,19 +123,34 @@ export function CheckoutDrawer({ product, onClose, clientId, paypalEnv, attribut
 
   return (
     <Sheet open={product !== null} onOpenChange={(open) => !open && onClose()} modal={false} disablePointerDismissal>
-      <SheetContent side="right" className="w-full sm:max-w-md">
+      <SheetContent side="right" className="w-full shadow-lift sm:max-w-md">
         {product && (
           <>
-            <SheetHeader>
-              <SheetTitle>{product.title}</SheetTitle>
-              <SheetDescription>
-                Sold by {product.merchantName} via Seen Partner Stores
-              </SheetDescription>
+            <SheetHeader className="border-b pb-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Checkout</p>
+              <div className="mt-2 flex gap-3">
+                <ProductThumb title={product.title} className="size-16" />
+                <div className="min-w-0">
+                  <SheetTitle className="text-base leading-snug">{product.title}</SheetTitle>
+                  <SheetDescription>
+                    Sold by {product.merchantName} via Seen Partner Stores
+                  </SheetDescription>
+                </div>
+              </div>
             </SheetHeader>
-            <div className="flex flex-col gap-4 px-4 pb-6">
-              <p className="text-3xl font-bold tabular-nums">{formatMoney(product.priceMinor, product.currency)}</p>
+            <div className="flex flex-col gap-5 px-4 pb-6">
+              <div className="flex items-baseline justify-between rounded-xl bg-muted/60 px-4 py-3">
+                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="text-2xl font-semibold tabular-nums">{formatMoney(product.priceMinor, product.currency)}</span>
+              </div>
 
-              {sdk.status === "loading" && <p className="text-sm text-muted-foreground">Loading PayPal…</p>}
+              {sdk.status === "loading" && (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">Loading PayPal…</p>
+                  <div className="h-11 animate-pulse rounded-xl bg-paypal/40" />
+                  <div className="h-11 animate-pulse rounded-xl bg-muted" />
+                </div>
+              )}
               {sdk.status === "error" && (
                 <p role="alert" className="text-sm text-destructive">
                   PayPal checkout is unavailable right now. Please try again in a moment.
@@ -153,7 +170,8 @@ export function CheckoutDrawer({ product, onClose, clientId, paypalEnv, attribut
                 </div>
               )}
               {busy && <p className="text-sm text-muted-foreground">Confirming your payment…</p>}
-              <p className="text-xs text-muted-foreground">
+              <p className="flex items-start gap-2 rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+                <FlaskConical className="mt-px size-3.5 shrink-0" aria-hidden />
                 Sandbox demo: use a PayPal sandbox buyer account or a sandbox test card. No real money moves.
               </p>
             </div>

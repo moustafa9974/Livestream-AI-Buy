@@ -46,7 +46,7 @@ test("screen share of mugs becomes a buyable card for viewers", async ({ browser
   await creator.getByRole("checkbox").check();
   const started = Date.now();
   await creator.getByRole("button", { name: "Go live" }).click();
-  await expect(creator.getByText("● Live")).toBeVisible();
+  await expect(creator.getByText("Live now")).toBeVisible();
 
   await viewer.goto("/live/maya-makes");
   const card = viewer.getByRole("listitem").filter({ hasText: "Speckled Stoneware Mug" });

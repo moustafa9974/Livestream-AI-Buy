@@ -65,14 +65,14 @@ export function DemoPanel({ products, holdHours, holdOverridden, aiProvider, ker
   );
 
   return (
-    <div className="space-y-6">
-      <section className="space-y-2 rounded-xl border p-4">
+    <div className="space-y-4">
+      <section className="surface space-y-2 border-destructive/20 p-5">
         <h2 className="font-semibold">Reset</h2>
         <p className="text-sm text-muted-foreground">Restore the seeded demo (creator, catalog, past sales). Keeps AI caches and quota counters.</p>
         {btn("reset", "Reset demo data", {}, "Wipe all orders, detections and payouts and restore the demo?", "destructive")}
       </section>
 
-      <section className="space-y-3 rounded-xl border p-4">
+      <section className="surface space-y-3 p-5">
         <h2 className="font-semibold">Detections</h2>
         <div className="flex flex-wrap gap-2">{btn("inject_frame", "Inject a known frame (mugs)")}</div>
         <p className="text-xs text-muted-foreground">Runs a stored screenshot through the real pipeline (uses 1 AI request unless cached).</p>
@@ -81,7 +81,7 @@ export function DemoPanel({ products, holdHours, holdOverridden, aiProvider, ker
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
             aria-label="Product"
-            className="h-9 rounded-md border bg-background px-2 text-sm"
+            className="h-8 rounded-lg border bg-card px-2 text-sm shadow-sm"
           >
             {products.map((p) => (
               <option key={p.id} value={p.id}>
@@ -95,7 +95,7 @@ export function DemoPanel({ products, holdHours, holdOverridden, aiProvider, ker
         <p className="text-xs text-muted-foreground">Force detection puts the product on the viewers&apos; rail with zero AI quota. A simulated sale exercises commission, ticker and Zapier without PayPal.</p>
       </section>
 
-      <section className="space-y-3 rounded-xl border p-4">
+      <section className="surface space-y-3 p-5">
         <h2 className="font-semibold">Runtime settings</h2>
         <p className="text-sm">
           Commission hold: <b>{holdHours} h</b> {holdOverridden && <span className="text-muted-foreground">(overridden)</span>}
@@ -113,7 +113,7 @@ export function DemoPanel({ products, holdHours, holdOverridden, aiProvider, ker
         </div>
       </section>
 
-      <section className="space-y-2 rounded-xl border p-4">
+      <section className="surface space-y-2 p-5">
         <h2 className="font-semibold">KERNEL</h2>
         <p className="text-sm">Running cloud browsers: {kernelRunning}</p>
         {btn("kill_kernel", "Kill all KERNEL sessions", {}, undefined, "destructive")}

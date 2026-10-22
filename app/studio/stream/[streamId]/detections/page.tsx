@@ -2,13 +2,14 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
+import { PageHeader } from "@/components/app/page-header";
 import { prisma } from "@/lib/db";
 import { getOwnedStream } from "@/lib/studio";
 import { DetectionsGrid, type DetectionRow } from "./detections-grid";
 
 export default function DetectionsPage(props: PageProps<"/studio/stream/[streamId]/detections">) {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8">
       <Suspense fallback={<p className="text-muted-foreground">Loading detections…</p>}>
         <Content params={props.params} />
       </Suspense>
@@ -51,25 +52,25 @@ async function Content({ params }: { params: PageProps<"/studio/stream/[streamId
 
   return (
     <>
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-sm text-muted-foreground">Detections</p>
-          <h1 className="text-2xl font-bold tracking-tight">{stream.title}</h1>
-        </div>
-        <nav aria-label="Streams" className="flex flex-wrap gap-2 text-sm">
-          {streams.map((s) => (
-            <Link
-              key={s.id}
-              href={`/studio/stream/${s.id}/detections`}
-              aria-current={s.id === stream.id ? "page" : undefined}
-              className={`rounded-md border px-2.5 py-1 ${s.id === stream.id ? "bg-muted font-medium" : ""}`}
-            >
-              {s.title} · {s.status}
-            </Link>
-          ))}
-        </nav>
-      </header>
-      <p className="text-sm text-muted-foreground">Double-click a label to correct it. Hidden products never show to viewers in this stream.</p>
+      <PageHeader
+        eyebrow="Detections"
+        title={stream.title}
+        description="Double-click a label to correct it. Hidden products never show to viewers in this stream."
+      />
+      <nav aria-label="Streams" className="flex flex-wrap gap-2 text-sm">
+        {streams.map((s) => (
+          <Link
+            key={s.id}
+            href={`/studio/stream/${s.id}/detections`}
+            aria-current={s.id === stream.id ? "page" : undefined}
+            className={`rounded-full border px-3 py-1 shadow-sm transition ${
+              s.id === stream.id ? "border-primary/40 bg-accent font-medium text-accent-foreground" : "bg-card text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {s.title} · {s.status}
+          </Link>
+        ))}
+      </nav>
       <DetectionsGrid rows={rows} />
     </>
   );

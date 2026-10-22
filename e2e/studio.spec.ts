@@ -96,7 +96,7 @@ test("ending a stream produces a shareable recap", async ({ page, request }) => 
   // A forced detection also puts the demo stream live.
   await request.post("/api/demo", { data: { action: "force_detection", productId: "seed_prod_wireless_mic" } });
   await page.goto("/studio");
-  await expect(page.getByText("● Live")).toBeVisible();
+  await expect(page.getByText("Live now")).toBeVisible();
   await page.getByRole("button", { name: "End stream" }).click();
   await page.getByRole("link", { name: "Recap ↗" }).click();
   await expect(page.getByText(/Your \d+-min stream: \d+ products, \d+ sales/)).toBeVisible();

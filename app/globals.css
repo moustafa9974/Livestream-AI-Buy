@@ -7,9 +7,19 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  /* Geist is loaded in app/layout.tsx. (This used to read var(--font-sans), which
+     points at itself, so browsers dropped it and fell back to Times New Roman.) */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-paypal: var(--paypal);
+  --color-paypal-ink: var(--paypal-ink);
+  --color-success: var(--success);
+  --color-live: var(--live);
+  --shadow-card: 0 1px 2px oklch(0.25 0.03 285 / 0.04), 0 6px 20px -8px oklch(0.25 0.03 285 / 0.1);
+  --shadow-lift: 0 2px 4px oklch(0.25 0.03 285 / 0.05), 0 16px 40px -12px oklch(0.35 0.12 285 / 0.22);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,38 +59,45 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* Clean & bright: cool off-white page, white cards, one violet → PayPal-blue accent. */
+  --background: oklch(0.985 0.003 286);
+  --foreground: oklch(0.2 0.02 285);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.2 0.02 285);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.2 0.02 285);
+  --primary: oklch(0.53 0.23 286);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.01 286);
+  --secondary-foreground: oklch(0.28 0.03 285);
+  --muted: oklch(0.965 0.007 286);
+  --muted-foreground: oklch(0.5 0.02 285);
+  --accent: oklch(0.95 0.03 290);
+  --accent-foreground: oklch(0.42 0.2 286);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --border: oklch(0.92 0.008 286);
+  --input: oklch(0.9 0.01 286);
+  --ring: oklch(0.6 0.2 286);
+  --chart-1: oklch(0.53 0.23 286);
+  --chart-2: oklch(0.58 0.17 255);
+  --chart-3: oklch(0.7 0.15 165);
+  --chart-4: oklch(0.8 0.15 85);
+  --chart-5: oklch(0.65 0.2 20);
+  --radius: 0.75rem;
+  --brand: oklch(0.53 0.23 286);
+  --brand-2: oklch(0.56 0.19 252);
+  --paypal: #ffc439;
+  --paypal-ink: #003087;
+  --success: oklch(0.6 0.15 160);
+  --live: oklch(0.62 0.23 25);
+  --sidebar: oklch(0.985 0.003 286);
+  --sidebar-foreground: oklch(0.2 0.02 285);
+  --sidebar-primary: oklch(0.53 0.23 286);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.95 0.03 290);
+  --sidebar-accent-foreground: oklch(0.42 0.2 286);
+  --sidebar-border: oklch(0.92 0.008 286);
+  --sidebar-ring: oklch(0.6 0.2 286);
 }
 
 .dark {
@@ -115,6 +132,12 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --brand: oklch(0.65 0.2 286);
+  --brand-2: oklch(0.66 0.16 252);
+  --paypal: #ffc439;
+  --paypal-ink: #003087;
+  --success: oklch(0.72 0.15 160);
+  --live: oklch(0.66 0.22 25);
 }
 
 @layer base {
@@ -126,9 +149,47 @@
   }
   html {
     @apply font-sans;
+    font-feature-settings: "ss01", "cv11";
+  }
+  h1, h2, h3 {
+    @apply tracking-tight text-balance;
   }
 }
+
+/* Brand gradient (violet → PayPal blue) as background or text. */
+@utility brand-bg {
+  background-image: linear-gradient(135deg, var(--brand), var(--brand-2));
+}
+@utility brand-text {
+  background-image: linear-gradient(120deg, var(--brand), var(--brand-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* White card with a hairline border and a soft shadow: the app's basic surface. */
+@utility surface {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 1.4);
+  box-shadow: var(--shadow-card);
+}
+/* Soft violet glow behind hero sections. */
+@utility hero-glow {
+  background-image:
+    radial-gradient(60% 50% at 15% 0%, oklch(0.53 0.23 286 / 0.14), transparent 70%),
+    radial-gradient(50% 45% at 90% 10%, oklch(0.56 0.19 252 / 0.12), transparent 70%);
+}
+/* Dotted grid for empty video stages. */
+@utility stage-dots {
+  background-color: oklch(0.18 0.02 285);
+  background-image: radial-gradient(oklch(1 0 0 / 0.08) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
 /* Product cards sliding into the live rail (used with motion-safe: only). */
+@keyframes live-ping {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--live), transparent 40%); }
+  100% { box-shadow: 0 0 0 6px transparent; }
+}
 @keyframes rail-in {
   from { opacity: 0; transform: translateY(12px) scale(0.98); }
   to { opacity: 1; transform: none; }

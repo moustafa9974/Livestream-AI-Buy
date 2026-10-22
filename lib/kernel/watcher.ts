@@ -88,7 +88,11 @@ export async function startKernelWatch(streamId: string, url: string): Promise<{
   watches.set(streamId, watch);
 
   try {
-    watch.browser = await chromium.connectOverCDP(created.cdp_ws_url, { timeout: 30_000 });
+    // One retry: on a slow link the first WebSocket handshake can stall even though
+    // the browser is up (seen from a dev machine far from KERNEL's region).
+    watch.browser = await chromium
+      .connectOverCDP(created.cdp_ws_url, { timeout: 25_000 })
+      .catch(() => chromium.connectOverCDP(created.cdp_ws_url, { timeout: 25_000 }));
   } catch (err) {
     await stopWatch(watch, "cdp_connect_failed");
     throw new KernelUnavailable(`Couldn't connect to the KERNEL browser: ${err instanceof Error ? err.message : err}`);
@@ -104,6 +108,30 @@ function schedule(w: Watch, ms: number) {
 async function currentPage(w: Watch): Promise<Page | null> {
   const ctx = w.browser?.contexts()[0];
   return ctx?.pages()[0] ?? null;
+}
+
+type Box = { x: number; y: number; width: number; height: number };
+
+/**
+ * Screenshot via CDP's Page.captureScreenshot. Measured against a KERNEL browser: ~0.9 s,
+ * vs 1.7–3.2 s for page.screenshot(), which also waits for web fonts first and timed out
+ * on slow pages. Falls back to Playwright if the CDP call fails.
+ */
+async function captureJpeg(page: Page, box: Box | null): Promise<Buffer> {
+  try {
+    const cdp = await page.context().newCDPSession(page);
+    try {
+      const shot = (await Promise.race([
+        cdp.send("Page.captureScreenshot", { format: "jpeg", quality: 70, ...(box ? { clip: { ...box, scale: 1 } } : {}) }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("CDP screenshot timed out")), 20_000)),
+      ])) as { data: string };
+      return Buffer.from(shot.data, "base64");
+    } finally {
+      await cdp.detach().catch(() => {});
+    }
+  } catch {
+    return page.screenshot({ type: "jpeg", quality: 70, ...(box ? { clip: box } : {}), timeout: 30_000 });
+  }
 }
 
 async function tick(w: Watch) {
@@ -133,7 +161,7 @@ async function tick(w: Watch) {
         return r ? { x: Math.max(0, r.x), y: Math.max(0, r.y), width: r.width, height: r.height } : null;
       })
       .catch(() => null);
-    const jpeg = await page.screenshot({ type: "jpeg", quality: 70, ...(box ? { clip: box } : {}), timeout: 15_000 });
+    const jpeg = await captureJpeg(page, box);
 
     const outcome = await processFrame({
       streamId: w.streamId,

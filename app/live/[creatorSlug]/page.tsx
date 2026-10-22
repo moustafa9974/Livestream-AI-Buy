@@ -3,6 +3,7 @@ import path from "node:path";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
+import { Logo } from "@/components/app/logo";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { featureStatus } from "@/lib/flags";
@@ -11,11 +12,19 @@ import { LiveViewer, type VideoSource } from "./live-viewer";
 
 export default function LivePage(props: PageProps<"/live/[creatorSlug]">) {
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 py-6">
-      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
-        <LiveContent params={props.params} searchParams={props.searchParams} />
-      </Suspense>
-    </main>
+    <>
+      <header className="border-b bg-card/85 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-2.5">
+          <Logo />
+          <span className="rounded-full bg-paypal/25 px-2.5 py-1 text-xs font-medium text-paypal-ink">Checkout by PayPal</span>
+        </div>
+      </header>
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-6">
+        <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
+          <LiveContent params={props.params} searchParams={props.searchParams} />
+        </Suspense>
+      </main>
+    </>
   );
 }
 

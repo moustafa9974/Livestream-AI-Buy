@@ -79,7 +79,12 @@ export function PayMeNow({ payableMinor, currency, openBatchId, unavailableReaso
   return (
     <div className="flex items-center gap-3">
       {batchId && <span className="text-sm text-muted-foreground" role="status">Payout processing…</span>}
-      <Button size="lg" onClick={pay} disabled={busy || !!batchId || payableMinor <= 0}>
+      <Button
+        size="lg"
+        className="brand-bg h-10 border-0 px-4 text-white shadow-sm hover:brightness-110"
+        onClick={pay}
+        disabled={busy || !!batchId || payableMinor <= 0}
+      >
         {busy ? "Sending…" : `Pay me now · ${formatMoney(payableMinor, currency)}`}
       </Button>
     </div>

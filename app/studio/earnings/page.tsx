@@ -1,5 +1,8 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { Banknote, Clock, Send, ShoppingBag } from "lucide-react";
+import { PageHeader, SectionTitle } from "@/components/app/page-header";
+import { StatCard } from "@/components/app/stat-card";
 import { getEarnings } from "@/lib/commerce/earnings";
 import { featureStatus } from "@/lib/flags";
 import { formatMoney } from "@/lib/money";
@@ -27,52 +30,50 @@ async function EarningsContent() {
   const money = (minor: number) => formatMoney(minor, data.currency);
 
   const tiles = [
-    { label: "Sales", value: String(data.kpis.salesCount), hint: `${money(data.kpis.grossMinor)} gross` },
-    { label: "Upcoming commission", value: money(data.kpis.upcomingMinor), hint: `${money(data.kpis.payableNowMinor)} payable now` },
-    { label: "In payout", value: money(data.kpis.inPayoutMinor), hint: "Sent to PayPal" },
-    { label: "Paid to you", value: money(data.kpis.paidMinor), hint: data.kpis.topProduct ? `Top: ${data.kpis.topProduct}` : "" },
+    { icon: ShoppingBag, tone: "violet" as const, label: "Sales", value: String(data.kpis.salesCount), hint: `${money(data.kpis.grossMinor)} gross` },
+    { icon: Clock, tone: "amber" as const, label: "Upcoming commission", value: money(data.kpis.upcomingMinor), hint: `${money(data.kpis.payableNowMinor)} payable now` },
+    { icon: Send, tone: "blue" as const, label: "In payout", value: money(data.kpis.inPayoutMinor), hint: "Sent to PayPal" },
+    { icon: Banknote, tone: "green" as const, label: "Paid to you", value: money(data.kpis.paidMinor), hint: data.kpis.topProduct ? `Top: ${data.kpis.topProduct}` : "" },
   ];
 
   return (
     <>
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{creator.displayName}</p>
-          <h1 className="text-3xl font-bold tracking-tight">Earnings</h1>
-        </div>
-        <PayMeNow
-          payableMinor={data.kpis.payableNowMinor}
-          currency={data.currency}
-          openBatchId={data.openBatch}
-          unavailableReason={paypal.enabled ? null : paypal.reason ?? "PayPal unavailable"}
-        />
-      </header>
+      <PageHeader
+        eyebrow={creator.displayName}
+        title="Earnings"
+        description="Commission from every sale your streams drive, paid straight to your PayPal account."
+        actions={
+          <PayMeNow
+            payableMinor={data.kpis.payableNowMinor}
+            currency={data.currency}
+            openBatchId={data.openBatch}
+            unavailableReason={paypal.enabled ? null : paypal.reason ?? "PayPal unavailable"}
+          />
+        }
+      />
 
       <section aria-label="Summary" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {tiles.map((t) => (
-          <div key={t.label} className="rounded-xl border p-4">
-            <p className="text-sm text-muted-foreground">{t.label}</p>
-            <p className="mt-1 text-2xl font-bold tabular-nums">{t.value}</p>
-            <p className="mt-1 truncate text-xs text-muted-foreground">{t.hint}</p>
-          </div>
+          <StatCard key={t.label} icon={t.icon} tone={t.tone} label={t.label} value={t.value} hint={t.hint} />
         ))}
       </section>
 
       <section aria-labelledby="by-product" className="space-y-3">
-        <h2 id="by-product" className="text-lg font-semibold">By product</h2>
+        <SectionTitle id="by-product">By product</SectionTitle>
         {data.products.length ? <ProductsGrid rows={data.products} /> : <p className="text-muted-foreground">No clicks yet.</p>}
       </section>
 
       <section aria-labelledby="ledger" className="space-y-3">
-        <h2 id="ledger" className="text-lg font-semibold">Commission ledger</h2>
+        <SectionTitle id="ledger">Commission ledger</SectionTitle>
         <EarningsTable rows={data.rows} canRefund={paypal.enabled} />
       </section>
 
       <section aria-labelledby="timeline" className="space-y-3">
-        <h2 id="timeline" className="text-lg font-semibold">Timeline</h2>
-        <ol className="space-y-2 text-sm">
+        <SectionTitle id="timeline">Timeline</SectionTitle>
+        <ol className="surface relative space-y-0 p-4 text-sm">
           {data.timeline.map((e) => (
-            <li key={e.id} className="flex flex-wrap gap-x-3 border-s-2 ps-3">
+            <li key={e.id} className="relative flex flex-wrap gap-x-3 border-s-2 border-border pb-3 ps-4 last:pb-0">
+              <span aria-hidden className="absolute -start-[5px] top-1.5 size-2 rounded-full bg-primary ring-2 ring-card" />
               <time className="tabular-nums text-muted-foreground" dateTime={e.createdAt}>
                 {new Date(e.createdAt).toLocaleString("en-US", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" })} UTC
               </time>

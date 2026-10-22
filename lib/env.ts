@@ -44,7 +44,9 @@ const schema = z.object({
   // Tried in order when a model is busy (503), rate-limited (429) or times out. "" disables.
   GEMINI_VISION_FALLBACK_MODELS: z.string().default("gemini-3.1-flash-lite,gemini-3.5-flash,gemini-3.6-flash"),
   // Per-model attempt limit; VISION_TIMEOUT_MS caps the whole frame across fallbacks.
-  GEMINI_ATTEMPT_TIMEOUT_MS: int(9_000),
+  // Under load the Lite model took ~7 s for a one-word text reply (2026-10-22), so an
+  // image needs well over the earlier 9 s or every attempt times out.
+  GEMINI_ATTEMPT_TIMEOUT_MS: int(20_000),
   GEMINI_TEXT_MODEL: z.string().default("gemini-3.5-flash-lite"),
   GEMINI_TEXT_FALLBACK_MODELS: z.string().default("gemini-3.1-flash-lite,gemini-3.5-flash"),
   GEMINI_EMBEDDING_MODEL: z.string().default("gemini-embedding-001"),
@@ -57,7 +59,7 @@ const schema = z.object({
   GEMINI_EMBED_MAX_RPD: int(900),
   // "" disables the thinking config (for models that don't support thinking levels).
   GEMINI_THINKING_LEVEL: z.enum(["", "LOW", "MEDIUM", "HIGH"]).default("LOW"),
-  VISION_TIMEOUT_MS: int(25_000),
+  VISION_TIMEOUT_MS: int(45_000),
   OLLAMA_BASE_URL: z.string().default("http://127.0.0.1:11434"),
   OLLAMA_VISION_MODEL: z.string().default("qwen2.5vl:7b"),
   ANTHROPIC_API_KEY: str,

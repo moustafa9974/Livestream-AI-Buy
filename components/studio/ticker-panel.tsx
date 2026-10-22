@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatMoney } from "@/lib/money";
 
@@ -41,38 +42,51 @@ export function TickerPanel() {
     };
   }, []);
 
-  if (!t) return <section className="rounded-xl border p-4 text-sm text-muted-foreground">Loading sales…</section>;
+  if (!t) return <section className="surface h-44 animate-pulse p-4 text-sm text-muted-foreground">Loading sales…</section>;
   const quota = t.budget.limitPerDay ? `${t.budget.usedToday}/${t.budget.limitPerDay}` : `${t.budget.usedToday}`;
+  const pct = t.budget.limitPerDay ? Math.min(100, Math.round((t.budget.usedToday / t.budget.limitPerDay) * 100)) : 0;
 
   return (
-    <section aria-label="Today" className="space-y-3 rounded-xl border p-4">
-      <div className="grid grid-cols-2 gap-3">
+    <section aria-label="Today" className="surface overflow-hidden">
+      <div className="brand-bg grid grid-cols-2 gap-3 p-4 text-white">
         <div>
-          <p className="text-xs text-muted-foreground">Earned today</p>
-          <p className="text-2xl font-bold tabular-nums">{formatMoney(t.todayEarnedMinor, t.currency)}</p>
+          <p className="text-xs text-white/75">Earned today</p>
+          <p className="text-2xl font-semibold tabular-nums">{formatMoney(t.todayEarnedMinor, t.currency)}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Sales today</p>
-          <p className="text-2xl font-bold tabular-nums">{t.todaySales}</p>
+          <p className="text-xs text-white/75">Sales today</p>
+          <p className="text-2xl font-semibold tabular-nums">{t.todaySales}</p>
         </div>
       </div>
-      <ul className="space-y-1 text-sm" aria-live="polite">
-        {t.recent.length === 0 && <li className="text-muted-foreground">No sales yet.</li>}
-        {t.recent.map((s) => (
-          <li
-            key={s.id}
-            className={`flex justify-between gap-2 rounded px-1 ${flash === s.id ? "motion-safe:animate-[rail-in_400ms_ease-out] bg-emerald-50 dark:bg-emerald-950" : ""}`}
-          >
-            <span className="truncate">{s.title}</span>
-            <span className="shrink-0 tabular-nums text-emerald-700 dark:text-emerald-400">+{formatMoney(s.amountMinor, s.currency)}</span>
-          </li>
-        ))}
-      </ul>
-      <p className="flex items-center gap-2 text-xs text-muted-foreground">
-        AI frames today: {quota}
-        {t.budget.mode === "saver" && <Badge variant="secondary">Free-tier saver mode</Badge>}
-        {t.budget.mode === "cache_only" && <Badge variant="secondary">Quota used up: cache only</Badge>}
-      </p>
+      <div className="space-y-3 p-4">
+        <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <TrendingUp className="size-3.5" aria-hidden /> Recent commission
+        </p>
+        <ul className="space-y-1 text-sm" aria-live="polite">
+          {t.recent.length === 0 && <li className="text-muted-foreground">No sales yet.</li>}
+          {t.recent.map((s) => (
+            <li
+              key={s.id}
+              className={`flex justify-between gap-2 rounded-md px-1.5 py-0.5 ${flash === s.id ? "bg-success/12 motion-safe:animate-[rail-in_400ms_ease-out]" : ""}`}
+            >
+              <span className="truncate">{s.title}</span>
+              <span className="shrink-0 font-medium tabular-nums text-success">+{formatMoney(s.amountMinor, s.currency)}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="space-y-1.5 border-t pt-3">
+          <p className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span>AI frames today: {quota}</span>
+            {t.budget.mode === "saver" && <Badge variant="secondary">Free-tier saver mode</Badge>}
+            {t.budget.mode === "cache_only" && <Badge variant="secondary">Quota used up: cache only</Badge>}
+          </p>
+          {t.budget.limitPerDay && (
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+              <div className={`h-full rounded-full ${pct > 85 ? "bg-amber-500" : "bg-primary"}`} style={{ width: `${pct}%` }} />
+            </div>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

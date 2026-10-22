@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { PageHeader } from "@/components/app/page-header";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { getRuntimeSettings } from "@/lib/settings";
@@ -26,10 +27,11 @@ async function Content() {
   ]);
   return (
     <>
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight">Demo control panel</h1>
-        <p className="text-sm text-muted-foreground">For live demos: recover from a bad network, an empty AI quota or an unlucky frame. Only shown with DEMO_MODE=true.</p>
-      </header>
+      <PageHeader
+        eyebrow="Presenter tools"
+        title="Demo control panel"
+        description="For live demos: recover from a bad network, an empty AI quota or an unlucky frame. Only shown with DEMO_MODE=true."
+      />
       <DemoPanel
         products={products}
         holdHours={settings.commissionHoldHours ?? env.COMMISSION_HOLD_HOURS}

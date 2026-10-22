@@ -9,7 +9,21 @@ import { Input } from "@/components/ui/input";
 // AG Grid Community (MIT). Registered once per page load.
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const theme = themeQuartz.withParams({ fontFamily: "inherit", headerFontWeight: 600, borderRadius: 8 });
+// Colours come from the app's CSS tokens (app/globals.css) so the grid matches the studio.
+const theme = themeQuartz.withParams({
+  fontFamily: "inherit",
+  fontSize: 13,
+  headerFontWeight: 600,
+  borderRadius: 8,
+  wrapperBorderRadius: 14,
+  accentColor: "var(--primary)",
+  foregroundColor: "var(--foreground)",
+  backgroundColor: "var(--card)",
+  borderColor: "var(--border)",
+  headerBackgroundColor: "var(--muted)",
+  headerTextColor: "var(--muted-foreground)",
+  rowHoverColor: "color-mix(in oklch, var(--accent), transparent 40%)",
+});
 
 interface Props<T> {
   rows: T[];
@@ -34,7 +48,7 @@ export function DataGrid<T>({ rows, columns, csvName, getRowId, height = 420, la
           onChange={(e) => setFilter(e.target.value)}
           placeholder="Quick filter…"
           aria-label={`Filter ${label}`}
-          className="max-w-xs"
+          className="max-w-xs bg-card"
         />
         {csvName && (
           <Button variant="outline" size="sm" onClick={() => gridRef.current?.api.exportDataAsCsv({ fileName: csvName })}>
@@ -42,7 +56,7 @@ export function DataGrid<T>({ rows, columns, csvName, getRowId, height = 420, la
           </Button>
         )}
       </div>
-      <div style={{ height }} role="region" aria-label={label}>
+      <div style={{ height }} role="region" aria-label={label} className="rounded-[14px] shadow-card">
         <AgGridReact<T>
           ref={gridRef}
           theme={theme}

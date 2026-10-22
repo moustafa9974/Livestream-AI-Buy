@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import Link from "next/link";
+import { Activity, CircleCheck, ExternalLink, Eye, EyeOff, Film, Globe, MonitorUp, Pencil, Pin, ScanSearch, Upload, type LucideIcon } from "lucide-react";
+import { LivePill } from "@/components/app/live-pill";
+import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { TickerPanel } from "@/components/studio/ticker-panel";
 import { useFrameSampler } from "@/components/studio/use-frame-sampler";
 import { Input } from "@/components/ui/input";
@@ -21,13 +24,6 @@ interface Props {
   ai: { provider: string; enabled: boolean; reason: string | null; demoCache: boolean };
   tuning: { minChangeDistance: number; maxStaleSec: number };
 }
-
-const STATE_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
-  visible: "default",
-  pinned: "default",
-  candidate: "outline",
-  hidden: "secondary",
-};
 
 export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug, kernel, ai, tuning }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -207,37 +203,49 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
   const shown = detections.filter((d) => d.state !== "candidate");
   const candidates = detections.filter((d) => d.state === "candidate");
 
+  const sourceTile = (active: boolean) =>
+    `flex items-center gap-3 rounded-xl border p-3 text-start transition hover:border-primary/40 hover:bg-accent/50 focus-visible:outline-2 focus-visible:outline-primary ${
+      active ? "border-primary/50 bg-accent/60 ring-1 ring-primary/20" : "bg-card"
+    }`;
+  const isBlob = !!videoUrl?.startsWith("blob:");
+  // Going live already recorded the creator's consent for this stream, so a live stream
+  // counts as consented (the checkbox is locked while live).
+  const consented = consent || live;
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-      <section className="space-y-4">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm text-muted-foreground">{creatorName} · Studio</p>
-            <h1 className="text-2xl font-bold tracking-tight">{stream.title}</h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link href={`/live/${creatorSlug}`} target="_blank" className="text-sm underline-offset-2 hover:underline">
-              Viewer page ↗
-            </Link>
-            {ended && (
-              <Link href={`/recap/${stream.id}`} className="text-sm underline-offset-2 hover:underline">
-                Recap ↗
+      <section className="min-w-0 space-y-5">
+        <PageHeader
+          eyebrow={`${creatorName} · Studio`}
+          title={stream.title}
+          actions={
+            <>
+              {last?.mode === "saver" && <Badge variant="secondary">Free-tier saver mode</Badge>}
+              {last?.mode === "cache_only" && <Badge variant="secondary">Cache-only mode</Badge>}
+              <LivePill live={live} />
+              {ended && (
+                <Link href={`/recap/${stream.id}`} className={PILL_LINK}>
+                  Recap ↗
+                </Link>
+              )}
+              <Link href={`/live/${creatorSlug}`} target="_blank" className={PILL_LINK}>
+                Viewer page <ExternalLink className="size-3.5" aria-hidden />
               </Link>
-            )}
-            {live ? <Badge>● Live</Badge> : <Badge variant="outline">Offline</Badge>}
-            {last?.mode === "saver" && <Badge variant="secondary">Free-tier saver mode</Badge>}
-            {last?.mode === "cache_only" && <Badge variant="secondary">Cache-only mode</Badge>}
-          </div>
-        </header>
+            </>
+          }
+        />
 
         {!ai.enabled && (
-          <p role="status" className="rounded-lg border border-dashed p-3 text-sm">
+          <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
             AI provider <b>{ai.provider}</b> unavailable ({ai.reason}).{" "}
             {ai.demoCache ? "Cached demo results will still be used." : "Set DEMO_CACHE=true to use cached results."}
           </p>
         )}
 
-        <div className="relative w-full overflow-hidden rounded-xl bg-black" style={{ aspectRatio: aspect }}>
+        <div
+          className={`stage-dots relative w-full overflow-hidden rounded-2xl shadow-lift ring-1 ring-black/5 ${live ? "outline-2 outline-offset-4 outline-live/25" : ""}`}
+          style={{ aspectRatio: aspect }}
+        >
           <video
             ref={videoRef}
             src={videoUrl ?? undefined}
@@ -256,80 +264,116 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
           {boxes.map((d) => (
             <div
               key={d.id}
-              className="pointer-events-none absolute rounded-md border-2 border-yellow-300 motion-safe:transition-all"
+              className="pointer-events-none absolute rounded-lg border-2 border-white shadow-[0_0_0_3px_oklch(0.53_0.23_286/0.45)] motion-safe:transition-all"
               style={{ left: `${d.bbox![0] * 100}%`, top: `${d.bbox![1] * 100}%`, width: `${d.bbox![2] * 100}%`, height: `${d.bbox![3] * 100}%` }}
             >
-              <span className="absolute -top-6 left-0 whitespace-nowrap rounded bg-yellow-300 px-1.5 text-xs font-medium text-black">
+              <span className="absolute -top-7 left-0 whitespace-nowrap rounded-md bg-white px-2 py-0.5 text-xs font-medium text-foreground shadow">
                 {d.label}
               </span>
             </div>
           ))}
           {!source && (
-            <p className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-white/80">
-              Pick a source below to start
-            </p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center text-white">
+              <span className="grid size-12 place-items-center rounded-2xl bg-white/10 backdrop-blur" aria-hidden>
+                <ScanSearch className="size-6" />
+              </span>
+              <p className="font-medium">Pick a source below to start</p>
+              <p className="max-w-sm text-sm text-white/60">Seen samples frames, spots products and puts them next to your video for viewers.</p>
+            </div>
           )}
           {source === "kernel" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center text-sm text-white/90">
+              <Globe className="size-8 text-white/70" aria-hidden />
               <p>A KERNEL cloud browser is watching your stream page and sending frames.</p>
               {liveView && (
-                <a href={liveView} target="_blank" rel="noopener noreferrer" className="rounded-md bg-white px-3 py-1.5 font-medium text-black">
+                <a href={liveView} target="_blank" rel="noopener noreferrer" className="rounded-lg bg-white px-3 py-1.5 font-medium text-black">
                   Open KERNEL live view ↗
                 </a>
               )}
             </div>
           )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="inline-flex cursor-pointer items-center">
-            <input type="file" accept="video/*" className="sr-only" onChange={(e) => e.target.files?.[0] && pickFile(e.target.files[0])} />
-            <span className="inline-flex h-9 items-center rounded-md border px-3 text-sm font-medium hover:bg-muted">Upload video</span>
-          </label>
-          <Button variant="outline" onClick={pickDemoVideo}>Use demo video</Button>
-          <Button variant="outline" onClick={pickScreen}>Share screen / OBS</Button>
-        </div>
-
-        <div className="space-y-2 rounded-xl border p-4">
-          <p className="text-sm font-medium">Or watch your own stream URL with a KERNEL cloud browser</p>
-          {kernel.enabled ? (
-            source === "kernel" ? (
-              <Button variant="outline" onClick={stopKernel}>Stop KERNEL browser</Button>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                <Input
-                  type="url"
-                  value={kernelUrl}
-                  onChange={(e) => setKernelUrl(e.target.value)}
-                  placeholder="https://www.twitch.tv/yourchannel"
-                  aria-label="Your stream URL"
-                  className="min-w-60 flex-1"
-                />
-                <Button onClick={startKernel} disabled={!consent || !kernelUrl.startsWith("https://") || kernelBusy}>
-                  {kernelBusy ? "Starting…" : "Watch with KERNEL"}
-                </Button>
-              </div>
-            )
-          ) : (
-            <p className="text-xs text-muted-foreground">KERNEL unavailable ({kernel.reason}). Screen sharing and uploads still work.</p>
+          {live && (
+            <span aria-hidden className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-live px-2.5 py-1 text-[11px] font-semibold text-white">
+              <span className="size-1.5 rounded-full bg-white" /> LIVE
+            </span>
           )}
-          <p className="text-xs text-muted-foreground">Only your own channel. Capped per session and per day to protect credits; stops when the stream ends.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border p-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} disabled={live} />
-            This is my own content and I have the right to make it shoppable
+        <section aria-label="Source" className="surface space-y-4 p-4">
+          <p className="text-sm font-semibold">
+            <span className="text-muted-foreground">1 ·</span> Choose a source
+          </p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <label className={`${sourceTile(source === "upload" && isBlob)} cursor-pointer focus-within:outline-2 focus-within:outline-primary`}>
+              <input type="file" accept="video/*" className="sr-only" onChange={(e) => e.target.files?.[0] && pickFile(e.target.files[0])} />
+              <SourceIcon icon={Upload} />
+              <span className="text-sm font-medium">Upload video</span>
+            </label>
+            <button type="button" onClick={pickDemoVideo} className={sourceTile(source === "upload" && !isBlob)}>
+              <SourceIcon icon={Film} />
+              <span className="text-sm font-medium">Use demo video</span>
+            </button>
+            <button type="button" onClick={pickScreen} className={sourceTile(source === "screen")}>
+              <SourceIcon icon={MonitorUp} />
+              <span className="text-sm font-medium">Share screen / OBS</span>
+            </button>
+          </div>
+
+          <div className="space-y-2 rounded-xl bg-muted/60 p-3">
+            <p className="flex items-center gap-2 text-sm font-medium">
+              <Globe className="size-4 text-muted-foreground" aria-hidden />
+              Or watch your own stream URL with a KERNEL cloud browser
+            </p>
+            {kernel.enabled ? (
+              source === "kernel" ? (
+                <Button variant="outline" onClick={stopKernel}>Stop KERNEL browser</Button>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  <Input
+                    type="url"
+                    value={kernelUrl}
+                    onChange={(e) => setKernelUrl(e.target.value)}
+                    placeholder="https://www.twitch.tv/yourchannel"
+                    aria-label="Your stream URL"
+                    className="min-w-60 flex-1 bg-card"
+                  />
+                  <Button onClick={startKernel} disabled={!consented || !kernelUrl.startsWith("https://") || kernelBusy}>
+                    {kernelBusy ? "Starting…" : "Watch with KERNEL"}
+                  </Button>
+                </div>
+              )
+            ) : (
+              <p className="text-xs text-muted-foreground">KERNEL unavailable ({kernel.reason}). Screen sharing and uploads still work.</p>
+            )}
+            <p className="text-xs text-muted-foreground">Only your own channel. Capped per session and per day to protect credits; stops when the stream ends.</p>
+          </div>
+        </section>
+
+        <section aria-label="Go live" className="surface flex flex-wrap items-center justify-between gap-4 p-4">
+          <label className="flex items-center gap-2.5 text-sm">
+            <input type="checkbox" className="size-4 accent-primary" checked={consented} onChange={(e) => setConsent(e.target.checked)} disabled={live} />
+            <span>
+              <span className="font-semibold text-muted-foreground">2 ·</span> This is my own content and I have the right to make it shoppable
+            </span>
           </label>
           {live ? (
-            <Button variant="destructive" onClick={() => goLive(false)}>End stream</Button>
+            <Button variant="destructive" size="lg" className="px-4" onClick={() => goLive(false)}>
+              End stream
+            </Button>
           ) : (
-            <Button onClick={() => goLive(true)} disabled={!consent || !source || source === "kernel"}>Go live</Button>
+            <Button
+              size="lg"
+              className="brand-bg border-0 px-5 text-white shadow-sm hover:brightness-110"
+              onClick={() => goLive(true)}
+              disabled={!consent || !source || source === "kernel"}
+            >
+              Go live
+            </Button>
           )}
-        </div>
+        </section>
 
         {live && last?.note && (
-          <p role="alert" className="rounded-lg border border-amber-500/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+          <p role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
             {last.note}
           </p>
         )}
@@ -339,6 +383,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
           </p>
         )}
         <p className="text-xs text-muted-foreground" aria-live="polite">
+          <Activity className="me-1.5 inline size-3.5 align-[-2px]" aria-hidden />
           Frames sent {sampler.sent} · skipped (unchanged) {sampler.skipped}
           {last && <> · last: {last.source}{last.provider ? ` (${last.provider})` : ""}, {last.itemsSeen} items, {last.latencyMs} ms (lookup {last.timings.lookupMs} · AI {last.timings.aiMs} · tracker {last.timings.trackerMs})</>}
           {last?.note && <> · {last.note}</>}
@@ -348,38 +393,70 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
 
       <aside className="space-y-4">
         <TickerPanel />
-        <h2 className="font-semibold">Detected products</h2>
-        {shown.length === 0 && <p className="text-sm text-muted-foreground">Nothing confirmed yet. Items show once the AI is sure (usually within a few seconds).</p>}
-        <ul className="space-y-2">
-          {shown.map((d) => (
-            <li key={d.id} className="flex items-center justify-between gap-2 rounded-lg border p-3">
-              <div className="min-w-0">
-                <p className="truncate font-medium">{d.label}</p>
-                <p className="text-xs text-muted-foreground">
-                  {d.category} · {Math.round(d.confidence * 100)}% · {d.hits} hits
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <Badge variant={STATE_VARIANT[d.state]}>{d.state}</Badge>
-                <Button size="sm" variant="ghost" onClick={() => rename(d)} aria-label={`Correct ${d.label}`}>Edit</Button>
-                {d.state !== "pinned" && d.state !== "hidden" && (
-                  <Button size="sm" variant="ghost" onClick={() => setState(d.id, "pinned")} aria-label={`Pin ${d.label}`}>Pin</Button>
-                )}
-                {d.state !== "hidden" ? (
-                  <Button size="sm" variant="ghost" onClick={() => setState(d.id, "hidden")} aria-label={`Hide ${d.label}`}>Hide</Button>
-                ) : (
-                  <Button size="sm" variant="ghost" onClick={() => setState(d.id, "visible")} aria-label={`Show ${d.label}`}>Show</Button>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-        {candidates.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            Watching {candidates.length} possible item{candidates.length > 1 ? "s" : ""}: {candidates.map((c) => c.label).join(", ")}
-          </p>
-        )}
+        <section aria-labelledby="detected" className="surface p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 id="detected" className="font-semibold">Detected products</h2>
+            {shown.length > 0 && <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">{shown.length}</span>}
+          </div>
+          {shown.length === 0 && (
+            <div className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
+              <ScanSearch className="mx-auto mb-2 size-5" aria-hidden />
+              Nothing confirmed yet. Items show once the AI is sure (usually within a few seconds).
+            </div>
+          )}
+          <ul className="divide-y">
+            {shown.map((d) => (
+              <li key={d.id} className={`flex items-center justify-between gap-2 py-2.5 ${d.state === "hidden" ? "opacity-60" : ""}`}>
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1.5 font-medium">
+                    {d.state === "pinned" && <Pin className="size-3.5 shrink-0 text-primary" aria-label="Pinned" />}
+                    {d.state === "hidden" && <EyeOff className="size-3.5 shrink-0" aria-label="Hidden" />}
+                    {d.state === "visible" && <CircleCheck className="size-3.5 shrink-0 text-success" aria-label="Visible" />}
+                    <span className="truncate">{d.label}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {d.category} · {Math.round(d.confidence * 100)}% · {d.hits} hits
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center">
+                  <Button size="icon-sm" variant="ghost" onClick={() => rename(d)} aria-label={`Correct ${d.label}`} title="Edit label">
+                    <Pencil />
+                  </Button>
+                  {d.state !== "pinned" && d.state !== "hidden" && (
+                    <Button size="icon-sm" variant="ghost" onClick={() => setState(d.id, "pinned")} aria-label={`Pin ${d.label}`} title="Pin for viewers">
+                      <Pin />
+                    </Button>
+                  )}
+                  {d.state !== "hidden" ? (
+                    <Button size="icon-sm" variant="ghost" onClick={() => setState(d.id, "hidden")} aria-label={`Hide ${d.label}`} title="Hide from viewers">
+                      <EyeOff />
+                    </Button>
+                  ) : (
+                    <Button size="icon-sm" variant="ghost" onClick={() => setState(d.id, "visible")} aria-label={`Show ${d.label}`} title="Show to viewers">
+                      <Eye />
+                    </Button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+          {candidates.length > 0 && (
+            <p className="mt-3 rounded-lg bg-muted/70 px-3 py-2 text-xs text-muted-foreground">
+              Watching {candidates.length} possible item{candidates.length > 1 ? "s" : ""}: {candidates.map((c) => c.label).join(", ")}
+            </p>
+          )}
+        </section>
       </aside>
     </div>
+  );
+}
+
+const PILL_LINK = "inline-flex h-8 items-center gap-1.5 rounded-lg border bg-card px-3 text-sm font-medium shadow-sm hover:bg-muted";
+
+function SourceIcon({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground" aria-hidden>
+      <Icon className="size-4" />
+    </span>
   );
 }

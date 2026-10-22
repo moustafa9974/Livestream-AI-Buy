@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
 import { getEnv } from "@/lib/env";
 import { allFeatureStatuses, type Feature } from "@/lib/flags";
@@ -20,7 +21,7 @@ const LABELS: Partial<Record<Feature, string>> = {
 
 export default function SettingsPage() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
       <Suspense fallback={<p className="text-muted-foreground">Loading settings…</p>}>
         <Content />
       </Suspense>
@@ -36,21 +37,18 @@ async function Content() {
   const env = getEnv();
   return (
     <>
-      <header>
-        <p className="text-sm text-muted-foreground">{creator.displayName}</p>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-      </header>
+      <PageHeader eyebrow={creator.displayName} title="Settings" description="Payouts, alerts and which integrations are switched on." />
 
-      <section aria-labelledby="payouts" className="space-y-2">
-        <h2 id="payouts" className="text-lg font-semibold">Payouts</h2>
+      <section aria-labelledby="payouts" className="surface space-y-2 p-5">
+        <h2 id="payouts" className="font-semibold">Payouts</h2>
         <p className="text-sm">
           Commission <b>{creator.commissionRateBps / 100}%</b>, paid in <b>{creator.payoutCurrency}</b> to PayPal account{" "}
           <code className="rounded bg-muted px-1">{creator.payoutEmail}</code> (sandbox).
         </p>
       </section>
 
-      <section aria-labelledby="zapier" className="space-y-3">
-        <h2 id="zapier" className="text-lg font-semibold">Zapier</h2>
+      <section aria-labelledby="zapier" className="surface space-y-3 p-5">
+        <h2 id="zapier" className="font-semibold">Zapier</h2>
         <p className="text-sm text-muted-foreground">
           Get sales, payouts and stream recaps in Gmail, Slack, Discord, Google Sheets… Create a Zap with the <b>Webhooks by Zapier → Catch Hook</b>{" "}
           trigger and paste its URL here. Recipes: docs/SPONSORS.md.
@@ -61,13 +59,17 @@ async function Content() {
         <ZapierSettings initialUrl={creator.zapierWebhookUrl ?? ""} enabled={features.zapier.enabled} />
       </section>
 
-      <section aria-labelledby="integrations" className="space-y-3">
-        <h2 id="integrations" className="text-lg font-semibold">Integrations</h2>
+      <section aria-labelledby="integrations" className="surface space-y-3 p-5">
+        <h2 id="integrations" className="font-semibold">Integrations</h2>
         <ul className="grid gap-2 sm:grid-cols-2">
           {(Object.keys(LABELS) as Feature[]).map((f) => (
-            <li key={f} className="flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
+            <li key={f} className="flex items-center justify-between gap-2 rounded-xl border bg-background p-3 text-sm">
               <span>{LABELS[f]}</span>
-              {features[f].enabled ? <Badge>on</Badge> : <Badge variant="outline" title={features[f].reason}>off</Badge>}
+              {features[f].enabled ? (
+                <Badge className="bg-success/12 text-success">on</Badge>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground" title={features[f].reason}>off</Badge>
+              )}
             </li>
           ))}
         </ul>

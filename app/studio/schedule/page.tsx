@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { PageHeader } from "@/components/app/page-header";
 import { prisma } from "@/lib/db";
 import { featureStatus } from "@/lib/flags";
 import { formatMoney, sumMinor } from "@/lib/money";
@@ -8,7 +9,7 @@ import { ScheduleView, type ScheduleEvent } from "./schedule-view";
 
 export default function SchedulePage() {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8">
       <Suspense fallback={<p className="text-muted-foreground">Loading schedule…</p>}>
         <Content />
       </Suspense>
@@ -79,11 +80,11 @@ async function Content() {
   const bryntum = featureStatus("bryntum");
   return (
     <>
-      <header>
-        <p className="text-sm text-muted-foreground">{creator.displayName}</p>
-        <h1 className="text-2xl font-bold tracking-tight">Schedule</h1>
-        <p className="text-sm text-muted-foreground">Upcoming streams, automatic payout runs (Fridays) and when pending commissions become payable.</p>
-      </header>
+      <PageHeader
+        eyebrow={creator.displayName}
+        title="Schedule"
+        description="Upcoming streams, automatic payout runs (Fridays) and when pending commissions become payable."
+      />
       <ScheduleView events={events} bryntumEnabled={bryntum.enabled} />
     </>
   );

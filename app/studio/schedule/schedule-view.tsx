@@ -98,7 +98,7 @@ export function ScheduleView({ events, bryntumEnabled }: { events: ScheduleEvent
   return (
     <>
       {state === "loading" && <p className="text-sm text-muted-foreground">Loading Bryntum Calendar…</p>}
-      <div ref={host} className="overflow-hidden rounded-xl border" />
+      <div ref={host} className="surface overflow-hidden" />
     </>
   );
 }
@@ -117,7 +117,7 @@ function AgendaList({ events }: { events: ScheduleEvent[] }) {
           <h2 className="mb-1 text-sm font-semibold">{day}</h2>
           <ul className="space-y-1">
             {list.map((e) => (
-              <li key={e.id} className="flex gap-3 rounded-lg border p-2 text-sm">
+              <li key={e.id} className="surface flex gap-3 p-3 text-sm">
                 <span className="w-16 shrink-0 tabular-nums text-muted-foreground">
                   {e.allDay ? "all day" : new Date(e.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </span>

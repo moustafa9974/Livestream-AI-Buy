@@ -53,7 +53,7 @@ export function AssistantSheet({ open, onOpenChange }: { open: boolean; onOpenCh
           {messages.length === 0 && (
             <div className="flex flex-wrap gap-2">
               {SUGGESTIONS.map((s) => (
-                <button key={s} onClick={() => send(s)} className="rounded-full border px-3 py-1 text-xs hover:bg-muted">
+                <button key={s} onClick={() => send(s)} className="rounded-full border bg-card px-3 py-1 text-xs shadow-sm transition hover:border-primary/40 hover:bg-accent">
                   {s}
                 </button>
               ))}
@@ -63,7 +63,7 @@ export function AssistantSheet({ open, onOpenChange }: { open: boolean; onOpenCh
             <div
               key={i}
               className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm ${
-                m.role === "user" ? "self-end bg-primary text-primary-foreground" : "self-start bg-muted"
+                m.role === "user" ? "self-end brand-bg text-white" : "self-start bg-muted"
               }`}
             >
               {m.text}
