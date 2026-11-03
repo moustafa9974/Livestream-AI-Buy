@@ -45,4 +45,4 @@
 
 ## Creator controls
 
-In the studio's detections list: **Pin** (always shown), **Hide** (never shown again for this stream), and **Show** (undo a hide). The API also supports correcting a label: `PATCH /api/detections/[id] {"label": "…"}`. A UI for that comes in Phase 5.
+In the studio's detections list: **Pin** (always shown), **Hide** (never shown again for this stream), and **Show** (undo a hide). To correct a label, edit it inline in the detections grid (`/studio/stream/[id]/detections`), which calls `PATCH /api/detections/[id] {"label": "…"}` and re-matches the product.

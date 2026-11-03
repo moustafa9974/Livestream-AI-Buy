@@ -12,12 +12,12 @@ Everything below is free. The Render web service and the Neon database sit in th
 ## 1. Push the code to GitHub
 
 1. On github.com → **New repository**:
-   - name: `seen`;
+   - name: `Livestream-AI-Buy`;
    - Public (it's an open-source submission);
    - **don't** add a README or .gitignore.
 2. In the project folder:
    ```bash
-   git remote add origin https://github.com/<you>/seen.git
+   git remote add origin https://github.com/<you>/Livestream-AI-Buy.git
    git push -u origin main
    ```
    `.env` is gitignored, so no secrets are pushed. Check with `git ls-files | grep .env`: only `.env.example` should appear.
@@ -36,7 +36,7 @@ Use a **separate branch** so local testing never touches what judges see.
 
 ## 3. Render (Blueprint)
 
-1. render.com → sign in with GitHub → **New → Blueprint** → pick the `seen` repo. Render reads `render.yaml`.
+1. render.com → sign in with GitHub → **New → Blueprint** → pick the `Livestream-AI-Buy` repo. Render reads `render.yaml`.
 2. Fill in the values it asks for (everything marked `sync: false`):
 
    | Key | Value |

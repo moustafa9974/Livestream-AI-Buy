@@ -13,9 +13,9 @@ Every integration sits behind a flag (`lib/flags.ts`). If a service is off, out 
 | **Zapier** | Creator events sent to their Zaps | `lib/notify.ts`, Studio → Settings |
 | **AG Grid Community** | Earnings (by product + ledger) and detections grids, quick filter, CSV export | `components/grid/data-grid.tsx`, `app/studio/earnings`, `app/studio/stream/[id]/detections` |
 | **Bryntum Calendar** (trial) | Schedule: upcoming streams, payout runs, commission eligibility | `app/studio/schedule` |
-| **Astropods** | Hosted stream-watcher agent (Phase 6) | `astropods/` |
-| **Render** | Free web service hosting (Phase 6) | `render.yaml` |
-| **Postman** | API collection (Phase 7) | `postman/` |
+| **Astropods** | Hosted stream-watcher agent | `astropods/` |
+| **Render** | Free web service hosting | `render.yaml` |
+| **Postman** | API collection with tests: Seen endpoints + direct PayPal sandbox calls | `postman/` |
 
 ## PayPal: our client vs the Agent Toolkit
 

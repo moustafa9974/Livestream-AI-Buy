@@ -1,0 +1,385 @@
+{
+  "info": {
+    "name": "Seen: PayPal + AI live shopping",
+    "_postman_id": "7c1f5b2e-5e3a-4b8e-9a51-2f0d7f3c9e10",
+    "description": "API collection for Seen (https://github.com/moustafa9974/Livestream-AI-Buy).\n\nTwo folders:\n\n1. **Seen API**: the app's own endpoints. Run against `{{baseUrl}}` (local or Render). Viewer and creator identity are cookies, so Postman's cookie jar must be on. With `DEMO_MODE=true` the demo creator is signed in automatically.\n2. **PayPal sandbox (direct)**: the raw PayPal REST calls Seen makes, so you can inspect them on their own. Needs sandbox `clientId` / `clientSecret` in the environment.\n\nOrder capture needs a buyer to approve the order first: open the `approve` link from *Create order* in a browser and log in with a sandbox personal account, then run *Capture order*.\n\nSandbox only. Never put live credentials in this environment.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "productId", "value": "seed_prod_black_hoodie" },
+    { "key": "streamId", "value": "seed_stream_demo" },
+    { "key": "creatorSlug", "value": "maya-makes" }
+  ],
+  "item": [
+    {
+      "name": "Seen API",
+      "item": [
+        {
+          "name": "Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 and db ok', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.db).to.eql('ok');",
+                  "  pm.expect(j.features).to.be.an('object');",
+                  "});",
+                  "pm.test('no secrets in feature reasons', () => {",
+                  "  pm.expect(pm.response.text()).to.not.match(/secret|password/i);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/health" }
+        },
+        {
+          "name": "Demo controls",
+          "description": "Requires DEMO_MODE=true. On a public deployment, set `demoKey` to the DEMO_PANEL_KEY value.",
+          "item": [
+            {
+              "name": "Reset demo data",
+              "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+                "pm.test('reset ok', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().ok).to.eql(true); });"
+              ] } }],
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "x-demo-key", "value": "{{demoKey}}" }],
+                "body": { "mode": "raw", "raw": "{ \"action\": \"reset\" }" },
+                "url": "{{baseUrl}}/api/demo"
+              }
+            },
+            {
+              "name": "Force detection (no AI quota)",
+              "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+                "pm.test('detection created', () => {",
+                "  pm.response.to.have.status(200);",
+                "  const j = pm.response.json();",
+                "  pm.expect(j.detectionId).to.be.a('string');",
+                "  pm.collectionVariables.set('detectionId', j.detectionId);",
+                "});"
+              ] } }],
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "x-demo-key", "value": "{{demoKey}}" }],
+                "body": { "mode": "raw", "raw": "{ \"action\": \"force_detection\", \"productId\": \"{{productId}}\" }" },
+                "url": "{{baseUrl}}/api/demo"
+              }
+            },
+            {
+              "name": "Inject known frame (real pipeline)",
+              "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+                "pm.test('frame processed', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.have.property('source'); });"
+              ] } }],
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "x-demo-key", "value": "{{demoKey}}" }],
+                "body": { "mode": "raw", "raw": "{ \"action\": \"inject_frame\" }" },
+                "url": "{{baseUrl}}/api/demo"
+              }
+            },
+            {
+              "name": "Simulate sale (no money moves)",
+              "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+                "pm.test('sale simulated', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().ok).to.eql(true); });"
+              ] } }],
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "x-demo-key", "value": "{{demoKey}}" }],
+                "body": { "mode": "raw", "raw": "{ \"action\": \"simulate_sale\", \"productId\": \"{{productId}}\" }" },
+                "url": "{{baseUrl}}/api/demo"
+              }
+            },
+            {
+              "name": "Set commission hold to 0h",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "x-demo-key", "value": "{{demoKey}}" }],
+                "body": { "mode": "raw", "raw": "{ \"action\": \"settings\", \"commissionHoldHours\": 0 }" },
+                "url": "{{baseUrl}}/api/demo"
+              }
+            },
+            {
+              "name": "Kill all KERNEL sessions",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "x-demo-key", "value": "{{demoKey}}" }],
+                "body": { "mode": "raw", "raw": "{ \"action\": \"kill_kernel\" }" },
+                "url": "{{baseUrl}}/api/demo"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Viewer",
+          "item": [
+            {
+              "name": "Stream detections",
+              "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+                "pm.test('200', () => pm.response.to.have.status(200));"
+              ] } }],
+              "request": { "method": "GET", "url": "{{baseUrl}}/api/streams/{{streamId}}/detections" }
+            },
+            {
+              "name": "Record card click (attribution)",
+              "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+                "pm.test('attribution created', () => {",
+                "  pm.response.to.have.status(200);",
+                "  pm.collectionVariables.set('attributionId', pm.response.json().attributionId);",
+                "});"
+              ] } }],
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"streamId\": \"{{streamId}}\",\n  \"partnerProductId\": \"{{productId}}\",\n  \"tsSec\": 42\n}" },
+                "url": "{{baseUrl}}/api/attributions"
+              }
+            },
+            {
+              "name": "Create checkout order",
+              "description": "The client sends only WHAT and WHERE. Price, total and currency come from the database. Try adding `\"priceMinor\": 1` to the body: it is ignored.",
+              "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+                "pm.test('PayPal order created', () => {",
+                "  pm.response.to.have.status(200);",
+                "  const j = pm.response.json();",
+                "  pm.expect(j.orderId).to.be.a('string');",
+                "  pm.collectionVariables.set('paypalOrderId', j.orderId);",
+                "  pm.collectionVariables.set('seenOrderId', j.seenOrderId);",
+                "});"
+              ] } }],
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"partnerProductId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"paymentMethod\": \"paypal\",\n  \"attributionId\": \"{{attributionId}}\"\n}" },
+                "url": "{{baseUrl}}/api/checkout/orders"
+              }
+            },
+            {
+              "name": "Capture checkout order",
+              "description": "Approve the order first (PayPal popup in the app, or the approve link from the direct PayPal folder). Capturing twice is safe: the second call is a no-op.",
+              "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+                "pm.test('captured or explained', () => pm.expect(pm.response.code).to.be.oneOf([200, 409, 422]));"
+              ] } }],
+              "request": { "method": "POST", "url": "{{baseUrl}}/api/checkout/orders/{{paypalOrderId}}/capture" }
+            },
+            {
+              "name": "Rail (SSE stream)",
+              "description": "Server-Sent Events. Postman shows the first snapshot; use a browser or curl -N to watch updates.",
+              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "text/event-stream" }], "url": "{{baseUrl}}/api/live/{{creatorSlug}}/rail?stream={{streamId}}" }
+            }
+          ]
+        },
+        {
+          "name": "Creator",
+          "item": [
+            {
+              "name": "Hide a detection",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{ \"state\": \"hidden\" }" },
+                "url": "{{baseUrl}}/api/detections/{{detectionId}}"
+              }
+            },
+            {
+              "name": "Correct a detection label",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{ \"label\": \"black oversized hoodie\", \"state\": \"visible\" }" },
+                "url": "{{baseUrl}}/api/detections/{{detectionId}}"
+              }
+            },
+            {
+              "name": "Refund order",
+              "description": "Omit amountMinor for a full refund. The commission becomes REVERSED.",
+              "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+                "pm.test('refund response', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.have.property('status'); });"
+              ] } }],
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{}" },
+                "url": "{{baseUrl}}/api/orders/{{seenOrderId}}/refund"
+              }
+            },
+            {
+              "name": "Pay me now (PayPal Payout)",
+              "description": "No body: the amount is whatever the ledger says is eligible.",
+              "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+                "pm.test('payout response', () => pm.response.to.have.status(200));",
+                "const j = pm.response.json();",
+                "if (j && j.batchIds && j.batchIds.length) pm.collectionVariables.set('batchId', j.batchIds[0]);"
+              ] } }],
+              "request": { "method": "POST", "url": "{{baseUrl}}/api/payouts" }
+            },
+            {
+              "name": "Sync payout status",
+              "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+                "pm.test('status returned', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.have.property('final'); });"
+              ] } }],
+              "request": { "method": "POST", "url": "{{baseUrl}}/api/payouts/{{batchId}}/sync" }
+            }
+          ]
+        },
+        {
+          "name": "Webhooks",
+          "item": [
+            {
+              "name": "Unsigned event is rejected",
+              "description": "Seen verifies every webhook with PayPal. An event without PayPal's signature headers must be refused, never processed.",
+              "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+                "pm.test('rejected', () => pm.expect(pm.response.code).to.be.oneOf([400, 401]));"
+              ] } }],
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"id\": \"WH-FAKE-0001\",\n  \"event_type\": \"PAYMENT.CAPTURE.COMPLETED\",\n  \"resource\": { \"id\": \"FAKE\", \"status\": \"COMPLETED\" }\n}" },
+                "url": "{{baseUrl}}/api/webhooks/paypal"
+              }
+            },
+            {
+              "name": "Forged signature is rejected",
+              "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+                "pm.test('rejected', () => pm.expect(pm.response.code).to.be.oneOf([400, 401, 503]));"
+              ] } }],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "paypal-auth-algo", "value": "SHA256withRSA" },
+                  { "key": "paypal-cert-url", "value": "https://api.sandbox.paypal.com/v1/notifications/certs/CERT-fake" },
+                  { "key": "paypal-transmission-id", "value": "00000000-0000-0000-0000-000000000000" },
+                  { "key": "paypal-transmission-sig", "value": "forged" },
+                  { "key": "paypal-transmission-time", "value": "2026-11-03T12:00:00Z" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"id\": \"WH-FAKE-0002\",\n  \"event_type\": \"PAYMENT.CAPTURE.COMPLETED\",\n  \"resource\": { \"id\": \"FAKE\", \"status\": \"COMPLETED\" }\n}" },
+                "url": "{{baseUrl}}/api/webhooks/paypal"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PayPal sandbox (direct)",
+      "description": "The same PayPal REST calls Seen's typed client makes (lib/paypal). Every POST carries a PayPal-Request-Id so retries are safe.",
+      "item": [
+        {
+          "name": "Get access token",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('token issued', () => {",
+            "  pm.response.to.have.status(200);",
+            "  pm.environment.set('accessToken', pm.response.json().access_token);",
+            "});"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "basic", "basic": [
+              { "key": "username", "value": "{{clientId}}", "type": "string" },
+              { "key": "password", "value": "{{clientSecret}}", "type": "string" }
+            ] },
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": { "mode": "urlencoded", "urlencoded": [{ "key": "grant_type", "value": "client_credentials" }] },
+            "url": "{{paypalBase}}/v1/oauth2/token"
+          }
+        },
+        {
+          "name": "Create order (intent CAPTURE)",
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["pm.variables.set('requestId', pm.variables.replaceIn('{{$guid}}'));"] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('order created', () => {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "  const j = pm.response.json();",
+              "  pm.collectionVariables.set('directOrderId', j.id);",
+              "  const approve = (j.links || []).find(l => l.rel === 'approve' || l.rel === 'payer-action');",
+              "  if (approve) console.log('Approve in a browser:', approve.href);",
+              "});"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "PayPal-Request-Id", "value": "{{requestId}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"intent\": \"CAPTURE\",\n  \"purchase_units\": [{\n    \"custom_id\": \"postman-test\",\n    \"amount\": {\n      \"currency_code\": \"USD\",\n      \"value\": \"45.00\",\n      \"breakdown\": { \"item_total\": { \"currency_code\": \"USD\", \"value\": \"45.00\" } }\n    },\n    \"items\": [{\n      \"name\": \"Everyday Oversized Hoodie: Black\",\n      \"quantity\": \"1\",\n      \"unit_amount\": { \"currency_code\": \"USD\", \"value\": \"45.00\" }\n    }]\n  }],\n  \"payment_source\": { \"paypal\": { \"experience_context\": { \"return_url\": \"https://example.com/return\", \"cancel_url\": \"https://example.com/cancel\" } } }\n}" },
+            "url": "{{paypalBase}}/v2/checkout/orders"
+          }
+        },
+        {
+          "name": "Get order",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "url": "{{paypalBase}}/v2/checkout/orders/{{directOrderId}}"
+          }
+        },
+        {
+          "name": "Capture order (after approval)",
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["pm.variables.set('requestId', pm.variables.replaceIn('{{$guid}}'));"] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('captured', () => {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "  const cap = pm.response.json().purchase_units[0].payments.captures[0];",
+              "  pm.collectionVariables.set('captureId', cap.id);",
+              "});"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "PayPal-Request-Id", "value": "{{requestId}}" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": "{{paypalBase}}/v2/checkout/orders/{{directOrderId}}/capture"
+          }
+        },
+        {
+          "name": "Refund capture",
+          "event": [{ "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["pm.variables.set('requestId', pm.variables.replaceIn('{{$guid}}'));"] } }],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "PayPal-Request-Id", "value": "{{requestId}}" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": "{{paypalBase}}/v2/payments/captures/{{captureId}}/refund"
+          }
+        },
+        {
+          "name": "Create payout batch",
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["pm.variables.set('senderBatchId', 'postman-' + Date.now());"] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('batch accepted', () => {",
+              "  pm.response.to.have.status(201);",
+              "  pm.collectionVariables.set('directBatchId', pm.response.json().batch_header.payout_batch_id);",
+              "});"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"sender_batch_header\": {\n    \"sender_batch_id\": \"{{senderBatchId}}\",\n    \"email_subject\": \"Your Seen commission\"\n  },\n  \"items\": [{\n    \"recipient_type\": \"EMAIL\",\n    \"receiver\": \"{{creatorPayoutEmail}}\",\n    \"amount\": { \"currency\": \"USD\", \"value\": \"4.50\" },\n    \"sender_item_id\": \"postman-item-1\",\n    \"note\": \"Commission from Seen\"\n  }]\n}" },
+            "url": "{{paypalBase}}/v1/payments/payouts"
+          }
+        },
+        {
+          "name": "Get payout batch status",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('status present', () => pm.expect(pm.response.json().batch_header.batch_status).to.be.a('string'));"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "url": "{{paypalBase}}/v1/payments/payouts/{{directBatchId}}"
+          }
+        }
+      ]
+    }
+  ]
+}
