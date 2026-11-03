@@ -12,6 +12,7 @@ export type Feature =
   | "gemini"
   | "ollama"
   | "claude"
+  | "openrouter"
   | "channel3"
   | "kernel"
   | "elastic"
@@ -57,6 +58,9 @@ export function featureStatus(feature: Feature, env: Env = getEnv()): FeatureSta
       return needs(env.AI_PROVIDER === "claude", "AI_PROVIDER=claude", [
         [env.ANTHROPIC_API_KEY, "ANTHROPIC_API_KEY"],
       ]);
+    case "openrouter":
+      // Backup for Gemini only; free models, so the key is the only switch.
+      return needs(env.AI_PROVIDER === "gemini", "AI_PROVIDER=gemini", [[env.OPENROUTER_API_KEY, "OPENROUTER_API_KEY"]]);
     case "channel3":
       return needs(env.CHANNEL3_ENABLED, "CHANNEL3_ENABLED", [
         [env.CHANNEL3_API_KEY, "CHANNEL3_API_KEY"],
@@ -91,7 +95,7 @@ export function isEnabled(feature: Feature, env?: Env): boolean {
 }
 
 const ALL_FEATURES: Feature[] = [
-  "paypal", "agentToolkit", "gemini", "ollama", "claude", "channel3", "kernel", "elastic",
+  "paypal", "agentToolkit", "gemini", "ollama", "claude", "openrouter", "channel3", "kernel", "elastic",
   "astropods", "zapier", "bryntum", "audioContext", "demoMode", "demoCache",
 ];
 

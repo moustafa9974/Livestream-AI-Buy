@@ -72,6 +72,18 @@ export function statsLine(s: RecapStats): string {
   );
 }
 
+/**
+ * The same facts for the public recap page. Viewers and anyone the link is shared with
+ * see sales activity, never what the creator earned (that stays in the studio).
+ */
+export function publicStatsLine(s: RecapStats): string {
+  const best = s.moments[0];
+  return (
+    `A ${s.durationMin}-min stream: ${s.products} products shown, ${s.sales} sold.` +
+    (best ? ` Best moment: ${mmss(best.atSec)}, the ${best.label}.` : "")
+  );
+}
+
 /** Generates (or regenerates) the recap headline and notifies the creator. */
 export async function generateRecap(streamId: string): Promise<string> {
   const stream = await prisma.stream.findUniqueOrThrow({ where: { id: streamId }, include: { creator: true } });

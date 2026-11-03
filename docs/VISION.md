@@ -17,6 +17,8 @@
 - `gemini-3.8-flash` (the newest) was overloaded: 100 s+ answers and timeouts.
 - The **Flash-Lite** models found the same products with equally accurate boxes, in 1.6–3.9 s. So the default chain is `3.5-flash-lite → 3.1-flash-lite → 3.5-flash → 3.6-flash`.
 - On a 503, a 429 or a timeout, the frame fails over to the next model. A model out of daily quota is skipped until Google's reset time (from the 429's RetryInfo). When every model is out, the studio says so and only cached results are used.
+- On 2026-10-22 Google was overloaded for hours: Lite took ~7 s even for a one-word text reply, and the other models answered 503. Per-model attempts now get 20 s and a frame 45 s overall.
+- **Backup provider (OpenRouter, optional):** with `OPENROUTER_API_KEY` set, a frame Gemini can't answer (busy, timeout, out of quota) goes to OpenRouter's free vision models (`OPENROUTER_VISION_MODELS`, default `nvidia/nemotron-3.5-super-vl:free` then `google/gemma-4-31b-it:free`). It uses a separate free quota (20 requests/min, 50/day per [OpenRouter's limits](https://openrouter.ai/docs/api-reference/limits)), capped at 15/min and 45/day by `OPENROUTER_MAX_RPM`/`_RPD`. Gemini keeps 15 s of the frame's time free for the backup. The free model list changes, so check [openrouter.ai/models](https://openrouter.ai/models) (input: image, price: free) before the demo.
 - **Budget your quota:** at most one frame every 4 s, and unchanged frames are skipped (stale resend every 30 s). Record the demo video and export the demo cache early, because replays then cost nothing.
 - Frame-hash caching applies only to **uploaded/demo video files**. Live screen shares and cameras are always analysed fresh. Empty results and near-blank frames (white pages) are never cached.
 

@@ -24,7 +24,10 @@ export async function generate(params: {
   systemInstruction: string;
   tools?: Tool[];
   json?: { schema: unknown };
+  /** Per-model attempt limit. */
   timeoutMs?: number;
+  /** Limit across all fallback models, so a caller with a plan B isn't kept waiting. */
+  totalTimeoutMs?: number;
 }): Promise<GenerateContentResponse> {
   const env = getEnv();
   if (!env.GEMINI_API_KEY) throw new TextAIUnavailable("No Gemini key configured");
@@ -32,8 +35,11 @@ export async function generate(params: {
   genai ??= new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
 
   let last: unknown;
+  const deadline = Date.now() + (params.totalTimeoutMs ?? Number.POSITIVE_INFINITY);
   for (const model of textModels()) {
-    const signal = AbortSignal.timeout(params.timeoutMs ?? 15_000);
+    const left = deadline - Date.now();
+    if (left < 2_000) break;
+    const signal = AbortSignal.timeout(Math.min(params.timeoutMs ?? 15_000, left));
     try {
       return await genai.models.generateContent({
         model,

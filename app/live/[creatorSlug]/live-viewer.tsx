@@ -129,7 +129,7 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
                   {isLive ? <Radio className="size-6" /> : <Play className="size-6" />}
                 </span>
                 <p className="max-w-sm text-sm text-white/80">
-                  {isLive ? `${creator.name} is live. Products appear on the right as they show up on screen.` : "Video coming soon."}
+                  {isLive ? `${creator.name} is live. Products appear next to the video as they show up on screen.` : "Video coming soon."}
                 </p>
               </div>
             )}
@@ -273,14 +273,14 @@ function RailCard({ item, canBuy, onBuy }: { item: RailItem; canBuy: boolean; on
               {formatMoney(item.comparison.savingsMinor, p.currency)} less than similar items
             </p>
           )}
-          <Button
-            onClick={onBuy}
-            disabled={!canBuy}
-            aria-label={`Buy ${p.title} with PayPal`}
-            className="h-10 w-full rounded-xl bg-paypal text-sm font-semibold text-paypal-ink hover:bg-paypal hover:brightness-95"
-          >
-            {canBuy ? "Buy with PayPal" : "Checkout unavailable"}
-          </Button>
+          {/* PayPal's brand rules: PayPal-branded buttons come from the PayPal SDK (in the
+              checkout drawer). Our own trigger stays neutral. */}
+          <div className="space-y-1">
+            <Button onClick={onBuy} disabled={!canBuy} aria-label={`Buy ${p.title}`} className="h-10 w-full rounded-xl text-sm font-semibold">
+              {canBuy ? "Buy now" : "Checkout unavailable"}
+            </Button>
+            {canBuy && <p className="text-center text-[11px] text-muted-foreground">Pay with PayPal or card</p>}
+          </div>
         </>
       ) : item.similar.length === 0 ? (
         <p className="text-xs text-muted-foreground">Featured by the creator. Not available to buy here yet.</p>

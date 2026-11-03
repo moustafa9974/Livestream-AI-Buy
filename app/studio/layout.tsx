@@ -1,5 +1,8 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { StudioNav } from "@/components/studio/studio-nav";
+
+export const metadata: Metadata = { title: "Creator Studio" };
 
 export default function StudioLayout({ children }: LayoutProps<"/studio">) {
   return (

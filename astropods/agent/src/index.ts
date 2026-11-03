@@ -105,6 +105,30 @@ function schedule(w: Watch, ms: number) {
   if (!w.stopping) w.timer = setTimeout(() => void capture(w), ms);
 }
 
+type Box = { x: number; y: number; width: number; height: number };
+
+/**
+ * Screenshot via CDP's Page.captureScreenshot (~0.9 s against a KERNEL browser vs
+ * 1.7–3.2 s for page.screenshot(), which also waits for web fonts and timed out on slow
+ * pages). Same approach as Seen's in-app watcher; Playwright is the fallback.
+ */
+async function captureJpeg(page: Page, box: Box | null): Promise<Buffer> {
+  try {
+    const cdp = await page.context().newCDPSession(page);
+    try {
+      const shot = (await Promise.race([
+        cdp.send("Page.captureScreenshot", { format: "jpeg", quality: 70, ...(box ? { clip: { ...box, scale: 1 } } : {}) }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("CDP screenshot timed out")), 20_000)),
+      ])) as { data: string };
+      return Buffer.from(shot.data, "base64");
+    } finally {
+      await cdp.detach().catch(() => {});
+    }
+  } catch {
+    return page.screenshot({ type: "jpeg", quality: 70, ...(box ? { clip: box } : {}), timeout: 30_000 });
+  }
+}
+
 /** Screenshot the biggest visible <video> (or the whole viewport) and send it to Seen. */
 async function capture(w: Watch) {
   try {
@@ -128,7 +152,7 @@ async function capture(w: Watch) {
         return r ? { x: Math.max(0, r.x), y: Math.max(0, r.y), width: r.width, height: r.height } : null;
       })
       .catch(() => null);
-    const jpeg = await w.page.screenshot({ type: "jpeg", quality: 70, ...(box ? { clip: box } : {}), timeout: 15_000 });
+    const jpeg = await captureJpeg(w.page, box);
 
     const res = await seen<{ stop?: boolean; reason?: string; nextIntervalSec?: number | null; itemsSeen?: number; note?: string | null }>(
       "/api/watcher/frames",

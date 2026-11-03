@@ -85,6 +85,14 @@ By default (`WATCHER_RUNTIME=local`), the KERNEL capture loop runs inside the we
 2. `/studio/demo` → **Force detection** (the browser asks once for the demo key: Render → Environment → `DEMO_PANEL_KEY`). The product appears on the viewer page within a few seconds.
 3. Buy it with a sandbox account or a sandbox card. Then **Pay me now** on `/studio/earnings`.
 
+## Dependency audit (checked 2026-10-28)
+
+- **Next.js is pinned to 16.4.3.** 16.0.0–16.4.0 have a critical advisory (unauthenticated RCE in the image optimizer with SVGs, plus a Server Actions DoS). Don't deploy an older 16.x.
+- `npm audit fix` (non-breaking) was applied. The remaining findings (11 high, 1 moderate, 3 low) are all transitive. Most come through `@paypal/agent-toolkit@1.11.0` (the latest release), which pins older `ai`, `openai`, `@langchain/core`, `langsmith`, `mathjs` and `zod`. npm's suggested "fix" is a downgrade to 1.3.5, so we don't apply it.
+- Exposure: Seen calls the toolkit only on the server, for two read-only lookups (`get_order`, `list_transactions`) with arguments built from our own DB. No user files, uploads or serialized objects reach those libraries, which is where the advisories apply.
+- The low findings are in the `shadcn` CLI (a dev tool used to add components), not in the running app.
+- Re-run `npm audit --omit=dev` before each deploy, and bump the toolkit when PayPal publishes a release with newer dependencies.
+
 ## Region note
 
 Render's region can't be changed after creation; `render.yaml` sets `ohio` to sit next to Neon's `us-east-2`. If your Neon project is in another region, change `region:` before the first deploy (Render regions: oregon, ohio, virginia, frankfurt, singapore).

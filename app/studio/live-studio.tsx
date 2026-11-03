@@ -168,9 +168,19 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
   }
 
   async function stopKernel() {
-    await fetch(`/api/streams/${stream.id}/kernel`, { method: "DELETE" });
-    setLiveView(null);
-    setSource(null);
+    setKernelBusy(true);
+    try {
+      const res = await fetch(`/api/streams/${stream.id}/kernel`, { method: "DELETE" });
+      if (!res.ok) throw new Error(String(res.status));
+      setLiveView(null);
+      setSource(null);
+      toast.success("KERNEL browser stopped");
+    } catch {
+      // Keep the KERNEL view: the cloud browser may still be running (and billing).
+      toast.error("Couldn't stop the KERNEL browser. Try again, or use Demo panel → Kill all KERNEL sessions");
+    } finally {
+      setKernelBusy(false);
+    }
   }
 
   async function rename(d: DetectionView) {
@@ -326,7 +336,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
             </p>
             {kernel.enabled ? (
               source === "kernel" ? (
-                <Button variant="outline" onClick={stopKernel}>Stop KERNEL browser</Button>
+                <Button variant="outline" onClick={stopKernel} disabled={kernelBusy}>{kernelBusy ? "Stopping…" : "Stop KERNEL browser"}</Button>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   <Input

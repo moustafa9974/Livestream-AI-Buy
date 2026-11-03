@@ -11,12 +11,14 @@ interface Props {
   currency: string;
   openBatchId: string | null;
   unavailableReason: string | null;
+  /** Where the payout goes, shown in the confirmation. */
+  payoutEmail: string;
 }
 
 const POLL_MS = 3000;
 const MAX_POLLS = 40; // ~2 minutes; webhooks keep updating after that
 
-export function PayMeNow({ payableMinor, currency, openBatchId, unavailableReason }: Props) {
+export function PayMeNow({ payableMinor, currency, openBatchId, unavailableReason, payoutEmail }: Props) {
   const router = useRouter();
   const [batchId, setBatchId] = useState<string | null>(openBatchId);
   const [busy, setBusy] = useState(false);
@@ -53,6 +55,8 @@ export function PayMeNow({ payableMinor, currency, openBatchId, unavailableReaso
   }, [batchId, router]);
 
   async function pay() {
+    // Money leaves the platform: say how much and where, and ask first.
+    if (!confirm(`Send ${formatMoney(payableMinor, currency)} to your PayPal account ${payoutEmail}?`)) return;
     setBusy(true);
     try {
       const res = await fetch("/api/payouts", { method: "POST" });

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { FlaskConical } from "lucide-react";
+import { CircleCheck, FlaskConical, Lock } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ProductThumb } from "@/components/app/product-thumb";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { formatMoney } from "@/lib/money";
@@ -27,7 +28,15 @@ interface Props {
 }
 
 type CaptureResult =
-  | { status: "captured"; creatorEarnedMinor: number; creatorName?: string; currency: string }
+  | {
+      status: "captured";
+      orderRef: string;
+      totalMinor: number;
+      transactionId: string | null;
+      creatorEarnedMinor: number;
+      creatorName?: string;
+      currency: string;
+    }
   | { status: "pending" }
   | { status: "declined" };
 
@@ -39,6 +48,8 @@ export function CheckoutDrawer({ product, onClose, clientId, paypalEnv, attribut
   const sdk = usePayPalSdk(clientId, paypalEnv, product?.currency ?? "USD");
   const sessions = useRef<{ paypal?: PayPalPaymentSession; card?: PayPalPaymentSession }>({});
   const [busy, setBusy] = useState(false);
+  // Shown in place of the payment buttons once PayPal confirms the capture.
+  const [receipt, setReceipt] = useState<(Extract<CaptureResult, { status: "captured" }> & { productId: string }) | null>(null);
   // Latest product/attribution for callbacks created once per SDK instance.
   const current = useRef({ product, attributionId, onClose });
   useEffect(() => {
@@ -62,7 +73,8 @@ export function CheckoutDrawer({ product, onClose, clientId, paypalEnv, attribut
                 ? ` ${data.creatorName} earned ${formatMoney(data.creatorEarnedMinor, data.currency)} from your purchase.`
                 : "";
             toast.success(`Paid ✅${earned ? " —" : ""}${earned}`);
-            current.current.onClose();
+            const productId = current.current.product?.id;
+            if (productId) setReceipt({ ...data, productId });
           } else if (data.status === "pending") {
             toast.info("Payment is pending with PayPal. We'll confirm shortly.");
             current.current.onClose();
@@ -138,6 +150,9 @@ export function CheckoutDrawer({ product, onClose, clientId, paypalEnv, attribut
                 </div>
               </div>
             </SheetHeader>
+            {receipt?.productId === product.id ? (
+              <Receipt receipt={receipt} merchantName={product.merchantName} onDone={onClose} />
+            ) : (
             <div className="flex flex-col gap-5 px-4 pb-6">
               <div className="flex items-baseline justify-between rounded-xl bg-muted/60 px-4 py-3">
                 <span className="text-sm text-muted-foreground">Total</span>
@@ -170,14 +185,67 @@ export function CheckoutDrawer({ product, onClose, clientId, paypalEnv, attribut
                 </div>
               )}
               {busy && <p className="text-sm text-muted-foreground">Confirming your payment…</p>}
-              <p className="flex items-start gap-2 rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
-                <FlaskConical className="mt-px size-3.5 shrink-0" aria-hidden />
-                Sandbox demo: use a PayPal sandbox buyer account or a sandbox test card. No real money moves.
+              <p className="flex items-start gap-2 text-xs text-muted-foreground">
+                <Lock className="mt-px size-3.5 shrink-0" aria-hidden />
+                You pay on PayPal&apos;s secure checkout. Seen never sees your card or bank details; PayPal shares your shipping address with the
+                seller for delivery.
               </p>
+              {paypalEnv === "sandbox" && (
+                <p className="flex items-start gap-2 rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+                  <FlaskConical className="mt-px size-3.5 shrink-0" aria-hidden />
+                  Sandbox demo: use a PayPal sandbox buyer account or a sandbox test card. No real money moves.
+                </p>
+              )}
             </div>
+            )}
           </>
         )}
       </SheetContent>
     </Sheet>
+  );
+}
+
+/** Order confirmation: what was paid, to whom, and the references to quote for support. */
+function Receipt({
+  receipt,
+  merchantName,
+  onDone,
+}: {
+  receipt: Extract<CaptureResult, { status: "captured" }>;
+  merchantName: string;
+  onDone: () => void;
+}) {
+  const rows: Array<[string, string]> = [
+    ["Paid", formatMoney(receipt.totalMinor, receipt.currency)],
+    ["Seller", merchantName],
+    ["Order", receipt.orderRef],
+    ...(receipt.transactionId ? ([["PayPal transaction ID", receipt.transactionId]] as Array<[string, string]>) : []),
+  ];
+  return (
+    <div className="flex flex-col gap-5 px-4 pb-6" role="status">
+      <div className="flex flex-col items-center gap-2 pt-2 text-center">
+        <span className="grid size-12 place-items-center rounded-full bg-success/12 text-success" aria-hidden>
+          <CircleCheck className="size-7" />
+        </span>
+        <p className="text-lg font-semibold">Payment complete</p>
+        <p className="text-sm text-muted-foreground">PayPal will email your receipt. The seller ships your order.</p>
+      </div>
+      <dl className="divide-y rounded-xl border text-sm">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-3 px-4 py-2.5">
+            <dt className="text-muted-foreground">{k}</dt>
+            <dd className="truncate font-medium tabular-nums">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      {receipt.creatorEarnedMinor > 0 && receipt.creatorName && (
+        <p className="rounded-xl bg-accent px-4 py-3 text-sm text-accent-foreground">
+          Thanks for supporting {receipt.creatorName}: they earned <b>{formatMoney(receipt.creatorEarnedMinor, receipt.currency)}</b> from this purchase.
+        </p>
+      )}
+      <Button size="lg" className="h-10" onClick={onDone}>
+        Keep watching
+      </Button>
+    </div>
   );
 }

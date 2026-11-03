@@ -56,8 +56,8 @@ test("assistant answers from the ledger", async ({ page }) => {
   await page.goto("/studio");
   await page.getByRole("button", { name: "Ask Seen" }).click();
   await page.getByRole("button", { name: "How much did I earn this week?" }).click();
-  const answer = page.getByRole("dialog").locator(".bg-muted").last();
-  await expect(answer).not.toHaveText("Thinking…", { timeout: 90_000 });
+  // Either Gemini or the no-AI quick answer must reply with an amount from the ledger.
+  const answer = page.getByRole("dialog").locator("[data-role=assistant]").last();
   await expect(answer).toContainText("$", { timeout: 90_000 });
   console.log(`assistant: ${await answer.innerText()}`);
   expect(errors()).toEqual([]);
@@ -99,7 +99,9 @@ test("ending a stream produces a shareable recap", async ({ page, request }) => 
   await expect(page.getByText("Live now")).toBeVisible();
   await page.getByRole("button", { name: "End stream" }).click();
   await page.getByRole("link", { name: "Recap ↗" }).click();
-  await expect(page.getByText(/Your \d+-min stream: \d+ products, \d+ sales/)).toBeVisible();
+  await expect(page.getByText(/A \d+-min stream: \d+ products shown, \d+ sold/)).toBeVisible();
+  // Public page: the creator's earnings must not be shown.
+  await expect(page.getByText("Earned", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Shop the replay" })).toBeVisible();
   await request.post("/api/demo", { data: { action: "reset" } });
   expect(errors()).toEqual([]);

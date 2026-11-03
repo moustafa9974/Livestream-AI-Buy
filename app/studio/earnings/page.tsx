@@ -48,6 +48,7 @@ async function EarningsContent() {
             currency={data.currency}
             openBatchId={data.openBatch}
             unavailableReason={paypal.enabled ? null : paypal.reason ?? "PayPal unavailable"}
+            payoutEmail={creator.payoutEmail}
           />
         }
       />

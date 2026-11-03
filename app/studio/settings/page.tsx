@@ -11,6 +11,7 @@ const LABELS: Partial<Record<Feature, string>> = {
   paypal: "PayPal checkout + payouts",
   agentToolkit: "PayPal Agent Toolkit (assistant lookups)",
   gemini: "Gemini (vision, assistant, recaps)",
+  openrouter: "OpenRouter backup vision (free models)",
   channel3: "Channel3 similar items",
   kernel: "KERNEL stream-URL watcher",
   elastic: "Elastic search",

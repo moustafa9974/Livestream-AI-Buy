@@ -19,9 +19,9 @@ const WHY = [
 ];
 
 const CARDS = [
-  { title: "Oversized Hoodie: Black", merchant: "Northloop Apparel", price: "$45.00", tag: "Exact match", delay: "0.2s" },
-  { title: "Clip-On Wireless Mic Kit", merchant: "Studio Signal", price: "$69.00", tag: "Exact match", delay: "1.2s" },
-  { title: "Speckled Stoneware Mug", merchant: "Kiln & Co. Home", price: "$22.00", tag: "Similar", delay: "2.2s" },
+  { title: "Oversized Hoodie: Black", merchant: "Northloop Apparel", price: "$45.00", delay: "0.2s" },
+  { title: "Clip-On Wireless Mic Kit", merchant: "Studio Signal", price: "$69.00", delay: "1.2s" },
+  { title: "Speckled Stoneware Mug", merchant: "Kiln & Co. Home", price: "$22.00", delay: "2.2s" },
 ];
 
 const STACK = ["PayPal", "Gemini", "Channel3", "Elastic", "KERNEL", "Astropods", "Zapier", "AG Grid", "Bryntum", "Render", "Neon"];
@@ -105,7 +105,7 @@ export default function Home() {
                       <p className="mt-0.5 text-sm font-semibold tabular-nums">{c.price}</p>
                     </div>
                   </div>
-                  <span className="mt-2 block rounded-lg bg-paypal py-1.5 text-center text-xs font-bold text-paypal-ink">Buy with PayPal</span>
+                  <span className="mt-2 block rounded-lg bg-primary py-1.5 text-center text-xs font-semibold text-primary-foreground">Buy now</span>
                 </li>
               ))}
             </ul>

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Seen: if it's on screen, it's shoppable",
+  title: { default: "Seen: if it's on screen, it's shoppable", template: "%s · Seen" },
   description: "AI spots products on screen; viewers buy with PayPal; creators get paid via PayPal Payouts.",
 };
 

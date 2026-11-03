@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Logo } from "@/components/app/logo";
@@ -9,6 +10,8 @@ import { getEnv } from "@/lib/env";
 import { featureStatus } from "@/lib/flags";
 import { currentStreamFor, getRail } from "@/lib/rail";
 import { LiveViewer, type VideoSource } from "./live-viewer";
+
+export const metadata: Metadata = { title: "Watch & shop live" };
 
 export default function LivePage(props: PageProps<"/live/[creatorSlug]">) {
   return (

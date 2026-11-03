@@ -5,7 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 /**
  * The core loop through real browsers, as a creator and a viewer would use it:
  * creator shares a screen showing mugs → Go live → frames go to Gemini → the viewer's
- * live rail shows a buyable mug card → Buy with PayPal opens the checkout drawer.
+ * live rail shows a buyable mug card → Buy now opens the checkout drawer.
  *
  * Headless Chromium has no screen to share, so getDisplayMedia is replaced with a
  * canvas stream showing the fixture image. Everything after that is the real app.
@@ -55,7 +55,7 @@ test("screen share of mugs becomes a buyable card for viewers", async ({ browser
   console.log(`studio status: ${await creator.locator("p[aria-live=polite]").innerText()}`);
 
   // Checkout drawer opens and the PayPal JS SDK loads (paying needs a human login).
-  await card.getByRole("button", { name: /Buy .* with PayPal/ }).click();
+  await card.getByRole("button", { name: /^Buy / }).click();
   await expect(viewer.getByRole("dialog").getByText("Speckled Stoneware Mug")).toBeVisible();
   await expect(viewer.getByText("Loading PayPal…")).toBeHidden({ timeout: 30_000 });
   await expect(viewer.locator("paypal-button, paypal-basic-card-button").first()).toBeAttached();

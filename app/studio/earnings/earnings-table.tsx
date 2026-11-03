@@ -54,8 +54,10 @@ export function EarningsTable({ rows, canRefund }: { rows: Row[]; canRefund: boo
   const router = useRouter();
   const [refunding, setRefunding] = useState<string | null>(null);
 
-  async function refund(orderId: string) {
-    if (!confirm("Refund this order in full? The creator's commission will be reversed.")) return;
+  async function refund(row: Row) {
+    const { orderId } = row;
+    const amount = formatMoney(row.orderTotalMinor - row.refundedMinor, row.currency);
+    if (!confirm(`Refund ${amount} to the buyer through PayPal? Your commission on this sale is reversed.`)) return;
     setRefunding(orderId);
     try {
       const res = await fetch(`/api/orders/${orderId}/refund`, {
@@ -106,7 +108,7 @@ export function EarningsTable({ rows, canRefund }: { rows: Row[]; canRefund: boo
       maxWidth: 120,
       cellRenderer: (p: ICellRendererParams<Row>) =>
         canRefund && p.data?.refundable ? (
-          <Button variant="ghost" size="sm" disabled={refunding === p.data.orderId} onClick={() => refund(p.data!.orderId)}>
+          <Button variant="ghost" size="sm" disabled={refunding === p.data.orderId} onClick={() => refund(p.data!)}>
             {refunding === p.data.orderId ? "Refunding…" : "Refund"}
           </Button>
         ) : null,

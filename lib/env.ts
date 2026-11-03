@@ -64,6 +64,14 @@ const schema = z.object({
   OLLAMA_VISION_MODEL: z.string().default("qwen2.5vl:7b"),
   ANTHROPIC_API_KEY: str,
   CLAUDE_VISION_MODEL: z.string().default("claude-opus-5-5"),
+  // Backup vision provider: when Gemini fails a frame (busy, timeout, out of quota) the
+  // same frame goes to OpenRouter's free vision models. Free models allow 20 requests/min
+  // and 50/day (openrouter.ai/docs/api-reference/limits); our caps stay just under.
+  OPENROUTER_API_KEY: str,
+  // Free vision models, tried in order. Check openrouter.ai/models (input: image, :free).
+  OPENROUTER_VISION_MODELS: z.string().default("nvidia/nemotron-3.5-super-vl:free,google/gemma-4-31b-it:free"),
+  OPENROUTER_MAX_RPM: int(15),
+  OPENROUTER_MAX_RPD: int(45),
 
   // Vision pipeline tuning
   FRAME_INTERVAL_SEC: int(4),

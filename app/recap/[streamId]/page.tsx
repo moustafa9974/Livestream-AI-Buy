@@ -5,10 +5,9 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Logo } from "@/components/app/logo";
 import { prisma } from "@/lib/db";
-import { formatMoney } from "@/lib/money";
-import { mmss, recapStats, statsLine } from "@/lib/recap";
+import { mmss, publicStatsLine, recapStats } from "@/lib/recap";
 
-export const metadata: Metadata = { title: "Stream recap · Seen" };
+export const metadata: Metadata = { title: "Stream recap" };
 
 /** Public, shareable stream recap (SPEC §8): the marketing asset. */
 export default function RecapPage(props: PageProps<"/recap/[streamId]">) {
@@ -32,7 +31,8 @@ async function Content({ params }: { params: PageProps<"/recap/[streamId]">["par
     { label: "Minutes", value: String(stats.durationMin) },
     { label: "Products shown", value: String(stats.products) },
     { label: "Sales", value: String(stats.sales) },
-    { label: "Earned", value: formatMoney(stats.earnedMinor, stats.currency) },
+    // No earnings here: this page is public. The creator sees them in the studio.
+    { label: "Best moment", value: stats.moments[0] ? mmss(stats.moments[0].atSec) : "—" },
   ];
 
   return (
@@ -44,7 +44,7 @@ async function Content({ params }: { params: PageProps<"/recap/[streamId]">["par
         <p className="text-xs font-semibold uppercase tracking-wider text-primary">Stream recap · {stream.creator.displayName}</p>
         <h1 className="text-3xl font-semibold md:text-4xl">{stream.title}</h1>
         {stream.recapText && <p className="text-lg">{stream.recapText}</p>}
-        <p className="text-muted-foreground">{statsLine(stats)}</p>
+        <p className="text-muted-foreground">{publicStatsLine(stats)}</p>
       </header>
 
       <section aria-label="Stats" className="grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -1,6 +1,7 @@
 import { PayPalAgentToolkit } from "@paypal/agent-toolkit/openai";
 import type { FunctionDeclaration } from "@google/genai";
 import { CheckoutError } from "../commerce/checkout";
+import { orderRef } from "../commerce/order-ref";
 import { payMeNow } from "../commerce/payouts";
 import { refundOrder } from "../commerce/refunds";
 import { prisma } from "../db";
@@ -25,8 +26,7 @@ export interface ToolContext {
 
 type Handler = (args: Record<string, unknown>, ctx: ToolContext) => Promise<unknown>;
 
-/** Short order reference shown to creators: last 6 letters/digits of our order id. */
-export const orderRef = (orderId: string) => orderId.replace(/[^a-z0-9]/gi, "").slice(-6).toUpperCase();
+export { orderRef };
 
 async function resolveOrder(ref: unknown, creatorId: string) {
   const r = String(ref ?? "").replace(/[^a-z0-9]/gi, "").toUpperCase();
@@ -85,6 +85,21 @@ export const TOOL_DECLARATIONS: FunctionDeclaration[] = [
     name: "recent_orders",
     description: "The creator's most recent orders with their short reference (e.g. A1B2C3), product, total and status.",
     parametersJsonSchema: { type: "object", properties: { limit: { type: "integer", minimum: 1, maximum: 10 } } },
+  },
+  {
+    name: "stream_status",
+    description: "The creator's current stream: title, whether it is live, and which products viewers can see or buy right now.",
+    parametersJsonSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "payout_status",
+    description: "The creator's latest PayPal payouts with amount and PayPal status, plus how much is payable now.",
+    parametersJsonSchema: { type: "object", properties: { limit: { type: "integer", minimum: 1, maximum: 5 } } },
+  },
+  {
+    name: "upcoming_streams",
+    description: "The creator's scheduled upcoming streams with their date and time (UTC).",
+    parametersJsonSchema: { type: "object", properties: {} },
   },
   {
     name: "hide_detections",
@@ -166,6 +181,52 @@ const HANDLERS: Record<string, Handler> = {
       status: o.status,
       date: o.createdAt.toISOString().slice(0, 16).replace("T", " "),
     }));
+  },
+
+  async stream_status(_args, { creatorId }) {
+    const stream = await currentStreamFor(creatorId);
+    if (!stream) return { stream: null };
+    const shown = await prisma.detection.findMany({
+      where: { streamId: stream.id, state: { in: ["visible", "pinned"] } },
+      include: { matches: { where: { source: "partner" }, include: { partnerProduct: true } } },
+      orderBy: { firstSeenSec: "asc" },
+    });
+    return {
+      title: stream.title,
+      status: stream.status,
+      live_since: stream.status === "live" ? (stream.startedAt?.toISOString().slice(0, 16).replace("T", " ") ?? null) : null,
+      products_on_screen: shown.map((d) => ({
+        label: d.label,
+        pinned: d.state === "pinned",
+        buyable_as: d.matches[0]?.partnerProduct ? `${d.matches[0].partnerProduct.title} (${formatMoney(d.matches[0].partnerProduct.priceMinor, d.matches[0].partnerProduct.currency)})` : null,
+      })),
+    };
+  },
+
+  async payout_status(args, { creatorId }) {
+    const limit = Math.min(Number(args.limit) || 3, 5);
+    const [batches, payable] = await Promise.all([
+      prisma.payoutBatch.findMany({ where: { commissions: { some: { creatorId } } }, orderBy: { createdAt: "desc" }, take: limit }),
+      prisma.commission.findMany({ where: { creatorId, status: { in: ["ELIGIBLE", "FAILED", "RETURNED"] } } }),
+    ]);
+    const currency = payable[0]?.currency ?? batches[0]?.currency ?? "USD";
+    return {
+      payable_now: formatMoney(sumMinor(payable.map((c) => c.amountMinor - c.reversedMinor)), currency),
+      recent_payouts: batches.map((b) => ({
+        amount: formatMoney(b.totalMinor, b.currency),
+        paypal_status: b.status,
+        date: b.createdAt.toISOString().slice(0, 16).replace("T", " "),
+      })),
+    };
+  },
+
+  async upcoming_streams(_args, { creatorId }) {
+    const streams = await prisma.stream.findMany({
+      where: { creatorId, scheduledFor: { gt: new Date() } },
+      orderBy: { scheduledFor: "asc" },
+      take: 5,
+    });
+    return streams.map((s) => ({ title: s.title, when_utc: s.scheduledFor!.toISOString().slice(0, 16).replace("T", " ") }));
   },
 
   async hide_detections(args, { creatorId }) {

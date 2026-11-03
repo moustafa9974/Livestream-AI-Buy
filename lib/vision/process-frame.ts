@@ -1,6 +1,6 @@
 import type { DetectionState } from "@/generated/prisma/enums";
 import { cachedEmbeddings } from "../ai/embeddings";
-import { QuotaExhaustedError, selectProvider } from "../ai/providers";
+import { backupProvider, QuotaExhaustedError, selectProvider, type VisionProvider } from "../ai/providers";
 import { analyzeFrame } from "../ai/vision";
 import type { VisionResult } from "../ai/vision-schema";
 import { consume, frameIntervalFor, peek, type BudgetMode } from "../budget";
@@ -13,6 +13,10 @@ import { getRuntimeSettings } from "../settings";
 import { embeddingText } from "../search/types";
 import { DEFAULT_TRACKER, track, type TrackedDetection } from "./tracker";
 import { cacheableHash, getCachedVision, getNearestVision, putCachedVision } from "./vision-cache";
+
+/** Of the frame's time budget, kept back for the backup provider if the primary hangs. */
+const BACKUP_RESERVE_MS = 15_000;
+const MODE_RANK: Record<BudgetMode, number> = { normal: 0, saver: 1, cache_only: 2 };
 
 /**
  * One step of the stream watcher (SPEC §3 + §6.2): frame → (cache | AI) → tracker →
@@ -104,37 +108,44 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
     }
   }
 
-  // 2) Otherwise ask the AI, if one is configured and the budget allows.
+  // 2) Otherwise ask the AI, if one is configured and the budget allows. If the primary
+  //    (Gemini) can't answer this frame, the backup (OpenRouter free models) gets it.
   if (!result) {
-    const ai = selectProvider(aiOverride);
-    if (!ai) {
+    const primary = selectProvider(aiOverride);
+    const chain = [primary, backupProvider(primary)].filter((p): p is VisionProvider => p !== null);
+    if (chain.length === 0) {
       note = "No AI provider configured";
     } else if (!input.imageJpegBase64) {
       note = "No image sent";
     } else {
-      const budget = ai.budgetKey ? await consume(ai.budgetKey) : null;
-      if (budget && !budget.allowed) {
-        mode = "cache_only";
-        note = "Free-tier limit reached: using cached results only";
-      } else {
+      const deadline = Date.now() + env.VISION_TIMEOUT_MS;
+      let outOfQuota = false;
+      lap("lookupMs");
+      for (const [i, ai] of chain.entries()) {
+        const isLast = i === chain.length - 1;
+        // Leave the backup enough time to answer when the primary hangs.
+        const timeLeft = deadline - Date.now() - (isLast ? 0 : BACKUP_RESERVE_MS);
+        if (timeLeft < 3_000) continue;
+        const budget = ai.budgetKey ? await consume(ai.budgetKey) : null;
+        if (budget && !budget.allowed) {
+          outOfQuota = true;
+          note = "Free-tier limit reached: using cached results only";
+          continue;
+        }
         try {
-          lap("lookupMs");
-          const out = await analyzeFrame(
-            ai,
-            input.imageJpegBase64,
-            { streamTitle: stream.title, transcript: input.transcript },
-            env.VISION_TIMEOUT_MS,
-          );
+          const out = await analyzeFrame(ai, input.imageJpegBase64, { streamTitle: stream.title, transcript: input.transcript }, timeLeft);
           result = out.result;
           source = "ai";
           provider = out.provider;
+          note = undefined;
           // Only cache real findings: an empty answer cached under a static screen's
           // hash would block every later frame from being analysed.
           if (result.items.length > 0 && cacheableHash(input.dHash)) {
             await putCachedVision(input.dHash, { result, provider: out.provider });
           }
+          break;
         } catch (err) {
-          if (err instanceof QuotaExhaustedError) mode = "cache_only";
+          if (err instanceof QuotaExhaustedError) outOfQuota = true;
           const timedOut = err instanceof Error && /abort|timed? ?out/i.test(`${err.name} ${err.message}`);
           note =
             err instanceof QuotaExhaustedError
@@ -145,6 +156,7 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
           console.warn("[vision]", ai.name, err instanceof Error ? err.message : err);
         }
       }
+      if (!result && outOfQuota) mode = "cache_only";
     }
   }
 
@@ -234,15 +246,24 @@ export async function processFrame(input: FrameInput): Promise<FrameOutcome> {
           }
         }
       }
-    }, { timeout: 15_000, maxWait: 10_000 }); // Neon round-trips add up; defaults (5s / 2s) are too tight
+    // Neon round-trips add up; from a dev machine far from the DB region one frame took
+    // 22 s (2026-10-23). In production (same region) this finishes in well under a second.
+    }, { timeout: 30_000, maxWait: 10_000 });
     emitRailChanged(stream.id);
   }
 
   lap("trackerMs");
 
   // 4) Tell the client how fast to sample next, based on remaining free quota.
-  const ai = selectProvider(aiOverride);
-  if (ai?.budgetKey && mode === "normal") mode = (await peek(ai.budgetKey)).mode;
+  // With a backup configured, sampling slows down only when both budgets are low.
+  if (mode === "normal") {
+    const primary = selectProvider(aiOverride);
+    const modes: BudgetMode[] = [];
+    for (const p of [primary, backupProvider(primary)]) {
+      if (p) modes.push(p.budgetKey ? (await peek(p.budgetKey)).mode : "normal");
+    }
+    if (modes.length) mode = modes.reduce((best, m) => (MODE_RANK[m] < MODE_RANK[best] ? m : best));
+  }
   if (mode !== "normal") void notifySaverOnce(stream.creatorId, mode);
   let nextIntervalSec = frameIntervalFor(mode, stream.frameIntervalSec);
   // A new candidate needs a second sighting to show; look again soon so it appears

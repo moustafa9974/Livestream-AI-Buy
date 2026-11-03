@@ -11,6 +11,7 @@ import { notify } from "../notify";
 import { createCommissionForOrder } from "./commissions";
 import { audit, lockRow } from "./db";
 import { buildCreateOrderBody, type OrderLine } from "./order-body";
+import { orderRef } from "./order-ref";
 
 export const MAX_QUANTITY = 5;
 
@@ -115,7 +116,18 @@ export async function startCheckout(input: StartCheckoutInput) {
 }
 
 export type CaptureOutcome =
-  | { status: "captured"; orderId: string; creatorEarnedMinor: number; creatorName?: string; currency: string }
+  | {
+      status: "captured";
+      orderId: string;
+      /** Receipt details for the buyer. */
+      orderRef: string;
+      totalMinor: number;
+      /** PayPal's capture id: the transaction id the buyer also sees in their PayPal account. */
+      transactionId: string | null;
+      creatorEarnedMinor: number;
+      creatorName?: string;
+      currency: string;
+    }
   | { status: "pending"; orderId: string }
   | { status: "declined"; orderId: string }; // buyer can retry with another funding source
 
@@ -234,6 +246,9 @@ async function capturedOutcome(orderId: string): Promise<CaptureOutcome> {
   return {
     status: "captured",
     orderId,
+    orderRef: orderRef(orderId),
+    totalMinor: order.totalMinor,
+    transactionId: order.paypalCaptureId,
     creatorEarnedMinor: c?.amountMinor ?? 0,
     creatorName: c?.creator.displayName,
     currency: order.currency,

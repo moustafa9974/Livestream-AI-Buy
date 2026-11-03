@@ -10,9 +10,9 @@ import { RawVisionResult, VISION_JSON_SCHEMA } from "./vision-schema";
  * validation and guardrails happen once, in vision.ts, for every provider.
  */
 export interface VisionProvider {
-  name: "gemini" | "ollama" | "claude";
+  name: "gemini" | "ollama" | "claude" | "openrouter";
   /** Budget counter to charge, or null for free/local providers. */
-  budgetKey: "gemini" | null;
+  budgetKey: "gemini" | "openrouter" | null;
   analyzeRaw(imageJpegBase64: string, userText: string, signal: AbortSignal): Promise<string>;
 }
 
@@ -27,7 +27,7 @@ const trip = (model: string, ms = TRIP_MS) => trippedUntil.set(model, Date.now()
 /** Google's 429 carries RetryInfo (e.g. "26479s" until the daily quota resets). */
 export function retryDelayMs(err: unknown): number | null {
   if (!(err instanceof Error)) return null;
-  const m = /"retryDelay"s*:s*"(d+(?:.d+)?)s"/.exec(err.message);
+  const m = /"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/.exec(err.message);
   return m ? Math.min(Number(m[1]) * 1000, 12 * 3_600_000) : null;
 }
 
@@ -123,6 +123,84 @@ export function ollamaProvider(): VisionProvider {
       return json.message?.content ?? "";
     },
   };
+}
+
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+// Models that rejected json_schema (some free endpoints only offer JSON mode); remembered
+// so later frames go straight to json_object. Validation in vision.ts is the real check.
+const jsonModeOnly = new Set<string>();
+
+/**
+ * Backup provider: OpenRouter's free vision models over its OpenAI-style chat API
+ * (openrouter.ai/docs: image inputs as base64 data URLs, text part first; structured
+ * outputs via response_format json_schema). Used only when Gemini fails a frame.
+ */
+export function openrouterProvider(): VisionProvider {
+  const env = getEnv();
+  const models = env.OPENROUTER_VISION_MODELS.split(",").map((m) => m.trim()).filter(Boolean);
+  return {
+    name: "openrouter",
+    budgetKey: "openrouter",
+    async analyzeRaw(image, text, signal) {
+      const call = (model: string, jsonSchema: boolean, attemptSignal: AbortSignal) =>
+        fetch(OPENROUTER_URL, {
+          method: "POST",
+          signal: attemptSignal,
+          headers: { Authorization: `Bearer ${env.OPENROUTER_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model,
+            temperature: 0.2,
+            messages: [
+              { role: "system", content: VISION_SYSTEM_PROMPT },
+              {
+                role: "user",
+                content: [
+                  // JSON mode has no schema, so spell it out in the prompt as well.
+                  { type: "text", text: `${text}\n\nReply with only a JSON object matching this JSON Schema:\n${JSON.stringify(VISION_JSON_SCHEMA)}` },
+                  { type: "image_url", image_url: { url: `data:image/jpeg;base64,${image}` } },
+                ],
+              },
+            ],
+            response_format: jsonSchema
+              ? { type: "json_schema", json_schema: { name: "frame_products", strict: false, schema: VISION_JSON_SCHEMA } }
+              : { type: "json_object" },
+          }),
+        });
+
+      let lastErr: unknown;
+      for (const model of models) {
+        if (signal.aborted) break;
+        const attempt = AbortSignal.any([signal, AbortSignal.timeout(env.GEMINI_ATTEMPT_TIMEOUT_MS)]);
+        try {
+          let res = await call(model, !jsonModeOnly.has(model), attempt);
+          if ((res.status === 400 || res.status === 404) && !jsonModeOnly.has(model)) {
+            jsonModeOnly.add(model);
+            res = await call(model, false, attempt);
+          }
+          const body = (await res.json().catch(() => ({}))) as {
+            choices?: Array<{ message?: { content?: string | null } }>;
+            error?: { code?: number; message?: string };
+          };
+          const content = body.choices?.[0]?.message?.content;
+          if (res.ok && !body.error && typeof content === "string" && content.trim()) return content;
+          throw new Error(`OpenRouter ${model}: HTTP ${res.status}${body.error?.message ? ` ${body.error.message.slice(0, 120)}` : ""}`);
+        } catch (err) {
+          lastErr = err;
+          if (signal.aborted) break;
+          // Free endpoints come and go (429 upstream, 5xx, timeouts): try the next model.
+          console.warn(`[vision] ${attempt.aborted ? `OpenRouter ${model} timed out` : err instanceof Error ? err.message : err}; trying next model`);
+        }
+      }
+      throw lastErr ?? new Error("No OpenRouter model available");
+    },
+  };
+}
+
+/** The backup that takes over a frame Gemini couldn't answer, or null when not configured. */
+export function backupProvider(primary: VisionProvider | null): VisionProvider | null {
+  if (override !== undefined) return null; // tests control providers explicitly
+  const env = getEnv();
+  return primary?.name === "gemini" && env.OPENROUTER_API_KEY ? openrouterProvider() : null;
 }
 
 // Server-side refusal fallback is supported on these models (claude-api reference).
