@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TickerPanel } from "@/components/studio/ticker-panel";
 import { useFrameSampler } from "@/components/studio/use-frame-sampler";
+import { useBroadcaster } from "@/components/studio/use-broadcaster";
+import type { IceServers } from "@/components/live/rtc";
 import { Input } from "@/components/ui/input";
 import type { DetectionView } from "@/lib/vision/process-frame";
 
@@ -23,9 +25,14 @@ interface Props {
   kernel: { enabled: boolean; reason: string | null; liveViewUrl: string | null; running: boolean };
   ai: { provider: string; enabled: boolean; reason: string | null; demoCache: boolean };
   tuning: { minChangeDistance: number; maxStaleSec: number };
+  /** Real-time video to viewers (WebRTC); null when the feature is off. */
+  liveVideo: { iceServers: IceServers; maxViewers: number } | null;
 }
 
-export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug, kernel, ai, tuning }: Props) {
+/** HTMLMediaElement.captureStream: in Chrome/Edge/Firefox, missing from TS's DOM types. */
+type CapturableVideo = HTMLVideoElement & { captureStream?: () => MediaStream; mozCaptureStream?: () => MediaStream };
+
+export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug, kernel, ai, tuning, liveVideo }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [source, setSource] = useState<Source | null>(kernel.running ? "kernel" : null);
   const [kernelUrl, setKernelUrl] = useState("");
@@ -41,6 +48,34 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
   const [renamed, setRenamed] = useState<Record<string, string>>({});
   const [aspect, setAspect] = useState(16 / 9);
   const liveSince = useRef(0);
+  const [screenId, setScreenId] = useState<string | null>(null);
+  // captureStream() makes a new stream per call; reuse one per video file.
+  const fileStream = useRef<{ url: string; stream: MediaStream } | null>(null);
+
+  // What viewers receive over WebRTC: the shared screen, or the playing video file.
+  function mediaForViewers(): MediaStream | null {
+    const v = videoRef.current as CapturableVideo | null;
+    if (!v) return null;
+    if (source === "screen") return (v.srcObject as MediaStream | null) ?? null;
+    if (source === "upload" && videoUrl) {
+      if (fileStream.current?.url !== videoUrl) {
+        const capture = v.captureStream?.bind(v) ?? v.mozCaptureStream?.bind(v);
+        if (!capture) return null;
+        fileStream.current = { url: videoUrl, stream: capture() };
+      }
+      return fileStream.current.stream;
+    }
+    return null;
+  }
+
+  const broadcast = useBroadcaster({
+    streamId: stream.id,
+    active: live && !!liveVideo,
+    getMedia: mediaForViewers,
+    mediaKey: source === "screen" ? `screen:${screenId}` : source === "upload" && videoUrl ? `file:${videoUrl}` : null,
+    iceServers: liveVideo?.iceServers ?? [],
+    maxViewers: liveVideo?.maxViewers ?? 0,
+  });
 
   const sampler = useFrameSampler(videoRef, {
     streamId: stream.id,
@@ -108,6 +143,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
       const media = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 5 }, audio: false });
       setVideoUrl(null);
       setSource("screen");
+      setScreenId(media.id);
       const v = videoRef.current!;
       v.srcObject = media;
       await v.play();
@@ -234,6 +270,11 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
               {last?.mode === "saver" && <Badge variant="secondary">Free-tier saver mode</Badge>}
               {last?.mode === "cache_only" && <Badge variant="secondary">Cache-only mode</Badge>}
               <LivePill live={live} />
+              {live && liveVideo && (source === "screen" || source === "upload") && (
+                <Badge variant="secondary" title="Viewers watching your video in real time, browser to browser">
+                  <Eye className="size-3.5" aria-hidden /> {broadcast.viewers} watching live
+                </Badge>
+              )}
               {ended && (
                 <Link href={`/recap/${stream.id}`} className={PILL_LINK}>
                   Recap ↗

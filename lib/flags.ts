@@ -20,6 +20,7 @@ export type Feature =
   | "zapier"
   | "bryntum"
   | "audioContext"
+  | "liveVideo"
   | "demoMode"
   | "demoCache";
 
@@ -83,6 +84,8 @@ export function featureStatus(feature: Feature, env: Env = getEnv()): FeatureSta
       return needs(env.BRYNTUM_ENABLED, "BRYNTUM_ENABLED", []);
     case "audioContext":
       return needs(env.AUDIO_CONTEXT, "AUDIO_CONTEXT", []);
+    case "liveVideo":
+      return needs(env.LIVE_VIDEO_ENABLED, "LIVE_VIDEO_ENABLED", []);
     case "demoMode":
       return needs(env.DEMO_MODE, "DEMO_MODE", []);
     case "demoCache":
@@ -96,7 +99,7 @@ export function isEnabled(feature: Feature, env?: Env): boolean {
 
 const ALL_FEATURES: Feature[] = [
   "paypal", "agentToolkit", "gemini", "ollama", "claude", "openrouter", "channel3", "kernel", "elastic",
-  "astropods", "zapier", "bryntum", "audioContext", "demoMode", "demoCache",
+  "astropods", "zapier", "bryntum", "audioContext", "liveVideo", "demoMode", "demoCache",
 ];
 
 export function allFeatureStatuses(env?: Env): Record<Feature, FeatureStatus> {

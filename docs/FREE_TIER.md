@@ -23,6 +23,7 @@ Free tiers change often. The "checked" dates are when we last looked. Re-check t
 | **Ollama** | Local, open source | Your machine | Optional offline vision fallback |
 | **Claude API** | **Paid**: off by default | n/a | Adapter exists; only used if you set `AI_PROVIDER=claude` and a key |
 | **GitHub, YouTube, Postman, OBS, Playwright, Vitest** | Free | n/a | n/a |
+| **Live video (WebRTC)** | Browser to browser; Google's public STUN servers are free | No media server, so no bandwidth bill. Each viewer uses the creator's upload | `WEBRTC_MAX_VIEWERS=6`; frame-snapshot fallback; optional TURN only if you add one |
 | **Cloudflare quick tunnel** (local webhooks) | Free, no account | URL changes each run | Only for local webhook testing |
 
 ## What happens when a limit is hit

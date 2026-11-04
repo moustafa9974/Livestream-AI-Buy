@@ -4,6 +4,7 @@ import { errorResponse } from "@/lib/api";
 import { getOwnedStream } from "@/lib/studio";
 import { isDHash } from "@/lib/vision/dhash";
 import { matchNewlyVisible } from "@/lib/matching/match";
+import { putSnapshot } from "@/lib/realtime/snapshot";
 import { FrameError, processFrame } from "@/lib/vision/process-frame";
 
 // ~768px JPEG at q0.7 is ~60–150 KB; base64 adds a third. 600 KB leaves headroom.
@@ -23,6 +24,8 @@ export async function POST(req: Request, ctx: RouteContext<"/api/streams/[stream
     const stream = await getOwnedStream(streamId);
     if (!stream) return Response.json({ error: "Stream not found" }, { status: 404 });
     const body = Body.parse(await req.json());
+    // Fallback picture for viewers who can't get the direct WebRTC video.
+    if (body.image) putSnapshot(streamId, body.image);
     const outcome = await processFrame({
       streamId,
       tsSec: body.tsSec,

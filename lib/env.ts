@@ -109,6 +109,16 @@ const schema = z.object({
   ZAPIER_ENABLED: bool(false),
   BRYNTUM_ENABLED: bool(false),
   AUDIO_CONTEXT: bool(false),
+  // Live video to viewers: browser-to-browser WebRTC, so no media server to pay for.
+  LIVE_VIDEO_ENABLED: bool(true),
+  // Comma-separated STUN URLs (free public servers help browsers find each other).
+  WEBRTC_STUN_URLS: z.string().trim().default("stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302"),
+  // Optional TURN relay for strict networks. Its credential is sent to browsers by design.
+  WEBRTC_TURN_URL: str,
+  WEBRTC_TURN_USERNAME: str,
+  WEBRTC_TURN_CREDENTIAL: str,
+  // Each viewer is a separate upload from the creator's browser, so keep this small.
+  WEBRTC_MAX_VIEWERS: int(6),
 });
 
 export type Env = z.infer<typeof schema>;

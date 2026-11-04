@@ -3,6 +3,7 @@ import { z } from "zod";
 import { errorResponse } from "@/lib/api";
 import { prisma } from "@/lib/db";
 import { matchNewlyVisible } from "@/lib/matching/match";
+import { putSnapshot } from "@/lib/realtime/snapshot";
 import { FrameError, processFrame } from "@/lib/vision/process-frame";
 import { dHashFromJpeg } from "@/lib/vision/server-hash";
 import { unauthorized, watcherAuthorized } from "@/lib/watcher-auth";
@@ -27,6 +28,8 @@ export async function POST(req: Request) {
     if (!session || session.streamId !== body.streamId || session.status !== "running") {
       return Response.json({ stop: true, reason: "session_not_running" });
     }
+    // KERNEL streams have no browser to send WebRTC video, so viewers see these frames.
+    putSnapshot(body.streamId, body.image);
     const jpeg = Buffer.from(body.image, "base64");
     const outcome = await processFrame({ streamId: body.streamId, tsSec: body.tsSec, dHash: dHashFromJpeg(jpeg), imageJpegBase64: body.image });
     await prisma.kernelSession.update({ where: { id: session.id }, data: { framesSent: { increment: 1 } } });

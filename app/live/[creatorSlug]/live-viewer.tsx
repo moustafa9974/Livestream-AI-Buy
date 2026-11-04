@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronRight, Pin, Play, Radio, ScanSearch, ShieldCheck, ShoppingBag, TrendingDown } from "lucide-react";
 import { LivePill } from "@/components/app/live-pill";
+import { LiveStage } from "@/components/live/live-stage";
+import type { IceServers } from "@/components/live/rtc";
 import { ProductThumb } from "@/components/app/product-thumb";
 import { Button } from "@/components/ui/button";
 import { CheckoutDrawer, type CheckoutProduct } from "@/components/paypal/checkout-drawer";
@@ -20,11 +23,15 @@ interface Props {
   paypalUnavailableReason: string | null;
   /** Demo mode: one person plays viewer and creator, so checkout offers "see Maya's side". */
   demoMode: boolean;
+  /** Real-time video from the creator's browser (WebRTC); null when the feature is off. */
+  liveVideo: { iceServers: IceServers } | null;
 }
 
 const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
 
-export function LiveViewer({ creator, stream, video, initialRail, paypal, paypalUnavailableReason, demoMode }: Props) {
+export function LiveViewer({ creator, stream, video, initialRail, paypal, paypalUnavailableReason, demoMode, liveVideo }: Props) {
+  const router = useRouter();
+  const [wentLive, setWentLive] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [rail, setRail] = useState(initialRail);
   const [connected, setConnected] = useState(false);
@@ -81,7 +88,51 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
   }
 
   const highlight = rail.items.find((i) => i.detectionId === hovered && i.bbox);
-  const isLive = stream.status === "live";
+  // The rail stream carries the status, so the page notices when the stream ends.
+  const isLive = rail.status === "live";
+
+  // On a replay, watch for the creator going live so the viewer can jump to it.
+  useEffect(() => {
+    if (isLive) return;
+    let stop = false;
+    const check = () =>
+      fetch(`/api/live/${encodeURIComponent(creator.slug)}/now`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((d: { liveStreamId: string | null }) => !stop && setWentLive(!!d.liveStreamId && d.liveStreamId !== stream.id))
+        .catch(() => {});
+    const t = setInterval(check, 5000);
+    return () => {
+      stop = true;
+      clearInterval(t);
+    };
+  }, [isLive, creator.slug, stream.id]);
+
+  const recorded = (
+    <>
+      {video.kind === "file" && (
+        <video ref={videoRef} src={video.url} className="absolute inset-0 h-full w-full" autoPlay muted loop playsInline controls />
+      )}
+      {video.kind === "youtube" && (
+        <iframe
+          src={video.embedUrl}
+          title={stream.title}
+          className="absolute inset-0 h-full w-full"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+        />
+      )}
+      {video.kind === "none" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center text-white">
+          <span className="grid size-12 place-items-center rounded-2xl bg-white/10 backdrop-blur" aria-hidden>
+            {isLive ? <Radio className="size-6" /> : <Play className="size-6" />}
+          </span>
+          <p className="max-w-sm text-sm text-white/80">
+            {isLive ? `${creator.name} is live. Products appear next to the video as they show up on screen.` : "Video coming soon."}
+          </p>
+        </div>
+      )}
+    </>
+  );
 
   return (
     <>
@@ -104,6 +155,25 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
         </div>
       </header>
 
+      {wentLive && (
+        <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-live/30 bg-live/10 p-3 text-sm">
+          <span className="inline-flex items-center gap-2 font-medium">
+            <span className="size-2 rounded-full bg-live motion-safe:animate-pulse" aria-hidden />
+            {creator.name} just went live.
+          </span>
+          <Button
+            size="sm"
+            onClick={() => {
+              router.replace(`/live/${creator.slug}`);
+              router.refresh();
+              setWentLive(false);
+            }}
+          >
+            Watch live
+          </Button>
+        </div>
+      )}
+
       {!isLive && rail.items.length > 0 && (
         <p role="status" className="rounded-xl border bg-card p-3 text-sm text-muted-foreground">
           {creator.name} isn&apos;t live right now. This is the latest stream as a <b className="text-foreground">shoppable replay</b>: everything the AI
@@ -120,27 +190,10 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
       <div className="grid gap-6 lg:grid-cols-[1fr_370px]">
         <section className="min-w-0 space-y-4">
           <div className="stage-dots relative aspect-video w-full overflow-hidden rounded-2xl shadow-lift ring-1 ring-black/5">
-            {video.kind === "file" && (
-              <video ref={videoRef} src={video.url} className="absolute inset-0 h-full w-full" autoPlay muted loop playsInline controls />
-            )}
-            {video.kind === "youtube" && (
-              <iframe
-                src={video.embedUrl}
-                title={stream.title}
-                className="absolute inset-0 h-full w-full"
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-              />
-            )}
-            {video.kind === "none" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center text-white">
-                <span className="grid size-12 place-items-center rounded-2xl bg-white/10 backdrop-blur" aria-hidden>
-                  {isLive ? <Radio className="size-6" /> : <Play className="size-6" />}
-                </span>
-                <p className="max-w-sm text-sm text-white/80">
-                  {isLive ? `${creator.name} is live. Products appear next to the video as they show up on screen.` : "Video coming soon."}
-                </p>
-              </div>
+            {isLive && liveVideo ? (
+              <LiveStage creatorSlug={creator.slug} streamId={stream.id} iceServers={liveVideo.iceServers} fallback={recorded} />
+            ) : (
+              recorded
             )}
             {isLive && video.kind !== "youtube" && (
               <span aria-hidden className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-live px-2.5 py-1 text-[11px] font-semibold text-white">

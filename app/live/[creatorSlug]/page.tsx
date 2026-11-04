@@ -10,6 +10,7 @@ import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { featureStatus } from "@/lib/flags";
 import { getRail, viewerStreamFor } from "@/lib/rail";
+import { iceServersFrom } from "@/lib/realtime/webrtc";
 import { LiveViewer, type VideoSource } from "./live-viewer";
 
 export const metadata: Metadata = { title: "Watch & shop live" };
@@ -76,6 +77,7 @@ async function LiveContent({
       paypal={paypal.enabled ? { clientId: env.PAYPAL_CLIENT_ID!, env: env.PAYPAL_ENV } : null}
       paypalUnavailableReason={paypal.reason ?? null}
       demoMode={env.DEMO_MODE}
+      liveVideo={featureStatus("liveVideo").enabled ? { iceServers: iceServersFrom(env) } : null}
     />
   );
 }

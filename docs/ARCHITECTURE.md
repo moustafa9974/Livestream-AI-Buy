@@ -148,6 +148,15 @@ The exact allowed transitions are in `lib/state/*.ts` and covered by `lib/state/
 6. **Track.** Labels are embedded and clustered against active detections. A detection becomes visible after 2 hits in 15 s, or on the first sighting when both confidence and prominence are high (the fast lane). A hidden detection never comes back for that stream.
 7. **Match.** The partner catalog is searched through `ProductSearch` (Elastic hybrid BM25 + kNN, or the Postgres FTS + pgvector fallback) and scored as "Exact" or "Similar". Channel3 adds open-web similar items and a price comparison.
 
+## Live video
+
+Seen doesn't relay video. When a viewer opens a live stream:
+1. The viewer's browser posts a WebRTC offer to `/api/live/:slug/webrtc`.
+2. The creator's studio polls `/api/streams/:id/webrtc`, answers with its screen share or video file, and posts the answer back.
+3. The video then flows **browser to browser**. Free public STUN servers help the two browsers find each other (`WEBRTC_STUN_URLS`), and an optional TURN relay can be configured.
+
+The handshake lives in memory for a few seconds (`lib/realtime/webrtc.ts`), like the rail's event bus. The creator's studio caps viewers (`WEBRTC_MAX_VIEWERS`), because each viewer is a separate upload from the creator's browser. If a direct connection fails, the viewer page shows the newest frame the studio already sent for AI analysis (`lib/realtime/snapshot.ts`). Peer-to-peer means the creator and viewers can see each other's IP addresses.
+
 ## Fallbacks
 
 | Service | When it's off or down |
@@ -160,6 +169,7 @@ The exact allowed transitions are in `lib/state/*.ts` and covered by `lib/state/
 | Zapier | In-app notification center (🔔), each item marked delivered or not |
 | Bryntum | Built-in agenda list with the same events |
 | PayPal webhooks | Browser capture plus payout status polling cover the core loop |
+| Live video (WebRTC) | Viewers see the latest frame snapshot, refreshed every few seconds; with the flag off, the recorded video or a placeholder |
 
 ## Code map
 

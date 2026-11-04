@@ -51,6 +51,7 @@ No signup. You play both sides, in this order. A bar at the top of every page sa
 - Product detection on any video: no platform APIs needed, since the AI watches pixels.
 - Stable detections: 2 sightings within 15 s, embedding dedupe, no flicker. The creator can **pin**, **hide** or **correct** any item live.
 - A live product rail pushed to viewers over Server-Sent Events, with a "Shop this moment" timeline for replays.
+- **Live video to viewers, for $0:** the creator's browser streams straight to each viewer with WebRTC, so there's no media server to pay for. If a direct connection isn't possible, viewers see a live frame preview instead.
 - PayPal checkout (JS SDK v6) in a drawer: PayPal button and guest card.
 - Attribution from the exact on-screen moment to the order, the commission and the creator.
 - Commission ledger with a hold window, refunds and reversals, and **Pay me now** via PayPal Payouts with live status.

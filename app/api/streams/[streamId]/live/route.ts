@@ -5,6 +5,8 @@ import { audit } from "@/lib/commerce/db";
 import { prisma } from "@/lib/db";
 import { stopKernelForStream } from "@/lib/kernel/watcher";
 import { generateRecap } from "@/lib/recap";
+import { clearSnapshot } from "@/lib/realtime/snapshot";
+import { clearStreamSessions } from "@/lib/realtime/webrtc";
 import { getOwnedStream } from "@/lib/studio";
 
 const Body = z.discriminatedUnion("action", [
@@ -42,6 +44,8 @@ export async function POST(req: Request, ctx: RouteContext<"/api/streams/[stream
       payload: body.action === "start" ? { sourceType: body.sourceType } : {},
     });
     if (body.action === "stop") {
+      clearStreamSessions(streamId);
+      clearSnapshot(streamId);
       // Ending a stream: stop any KERNEL browser watching it, then write the recap.
       after(async () => {
         await stopKernelForStream(streamId, "stream_ended").catch(() => {});

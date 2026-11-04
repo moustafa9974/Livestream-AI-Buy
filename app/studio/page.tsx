@@ -6,6 +6,7 @@ import { currentStreamFor } from "@/lib/rail";
 import { getCurrentCreator } from "@/lib/session";
 import { kernelStatus } from "@/lib/kernel/watcher";
 import { listDetections } from "@/lib/vision/process-frame";
+import { iceServersFrom } from "@/lib/realtime/webrtc";
 import { LiveStudio } from "./live-studio";
 
 // Creator Studio (SPEC §8): source picker (upload / screen / own stream URL via KERNEL),
@@ -41,6 +42,7 @@ async function StudioContent() {
       kernel={{ enabled: k.enabled, reason: k.reason ?? null, liveViewUrl: ks?.liveViewUrl ?? null, running: !!ks?.running && stream.status === "live" }}
       ai={{ provider: env.AI_PROVIDER, enabled: ai.enabled, reason: ai.reason ?? null, demoCache: env.DEMO_CACHE }}
       tuning={{ minChangeDistance: env.DHASH_MIN_DISTANCE, maxStaleSec: env.MAX_STALE_SECONDS }}
+      liveVideo={featureStatus("liveVideo").enabled ? { iceServers: iceServersFrom(env), maxViewers: env.WEBRTC_MAX_VIEWERS } : null}
     />
   );
 }
