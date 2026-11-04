@@ -89,6 +89,19 @@ describe("matching → rail", () => {
     expect(card).toMatchObject({ state: "pinned", partner: null });
   });
 
+  it("one card per product when the AI describes it several ways", async () => {
+    const a = await detection("black fleece hoodie", "apparel/hoodie", { color: "black" });
+    const b = await detection("black hooded sweatshirt", "apparel/hoodie", { color: "black" });
+    await matchDetection(a.id);
+    await matchDetection(b.id);
+    // Both really matched the same store product, so the rail must collapse them.
+    const matched = await prisma.productMatch.findMany({ where: { detectionId: { in: [a.id, b.id] }, source: "partner" } });
+    expect(new Set(matched.map((m) => m.partnerProductId))).toEqual(new Set(["seed_prod_black_hoodie"]));
+    expect(matched).toHaveLength(2);
+    const hoodieCards = (await getRail(streamId)).items.filter((i) => i.partner?.title === "Everyday Oversized Hoodie: Black");
+    expect(hoodieCards).toHaveLength(1);
+  });
+
   it("hidden detections never reach viewers", async () => {
     const d = await detection("round tortoise sunglasses", "accessories/sunglasses", { color: "tortoiseshell" }, "hidden");
     await matchDetection(d.id);

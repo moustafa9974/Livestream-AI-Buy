@@ -84,11 +84,29 @@ export async function getRail(streamId: string): Promise<Rail> {
   // Viewers see things they can act on (a partner product, or similar items elsewhere),
   // plus anything the creator pinned: a pin means "show this", even before it's buyable.
   // The studio still lists every detection (lib/vision listDetections).
-  const items = all.filter((i) => i.partner || i.similar.length > 0 || i.state === "pinned");
+  const actionable = all.filter((i) => i.partner || i.similar.length > 0 || i.state === "pinned");
+
+  // One card per product. The AI often describes the same item several ways across frames
+  // ("black hoodie", "black fleece hoodie"), and each can match the same store product.
+  // The tracker can't always merge those, so the rail does: keep the best detection.
+  const best = new Map<string, RailItem>();
+  for (const i of actionable) {
+    if (!i.partner) continue;
+    const cur = best.get(i.partner.productId);
+    if (!cur || betterCard(i, cur)) best.set(i.partner.productId, i);
+  }
+  const items = actionable.filter((i) => !i.partner || best.get(i.partner.productId) === i);
 
   // Pinned first, then most recently seen: the thing on screen now is at the top.
   items.sort((a, b) => (a.state === b.state ? b.lastSeenSec - a.lastSeenSec : a.state === "pinned" ? -1 : 1));
   return { streamId, status: stream.status, version, items };
+}
+
+/** Which of two detections of the same product to show: pinned, then exact match, then latest. */
+function betterCard(a: RailItem, b: RailItem): boolean {
+  if (a.state !== b.state) return a.state === "pinned";
+  if (a.partner?.kind !== b.partner?.kind) return a.partner?.kind === "exact";
+  return a.lastSeenSec > b.lastSeenSec;
 }
 
 /**
