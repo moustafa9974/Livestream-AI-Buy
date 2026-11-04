@@ -32,17 +32,19 @@ Video ─► frame sampler ─► dHash change filter ─► vision AI ─► tr
 
 Seen is the AI glue between the two.
 
-## Try it in 60 seconds
+## Try it in 3 minutes
 
-No signup. Demo mode signs you in as the creator "Maya Makes".
+No signup. You play both sides, in this order. A bar at the top of every page says who you are and what's next.
 
-- **Viewer:** open the live demo → **Watch as Viewer** → tap a product card → **Buy now**.
-  - Pay with a sandbox PayPal account, or choose **Debit or Credit Card** and use a test card from PayPal's [sandbox card generator](https://developer.paypal.com/tools/sandbox/card-testing/).
-  - **No real money moves.** This is PayPal's sandbox, and no credentials are committed to this repo.
-- **Creator:** **Open Creator Studio**.
-  - **Live** → **Use demo video** → tick consent → **Go live**, and watch products appear;
-  - **Earnings** → see the sale → **Pay me now**;
-  - **Ask Seen** (assistant) → "How much did I earn this week?"
+1. **Shop as a viewer.** Click **Start the demo as a viewer**.
+   - You're watching creator **Maya Makes** (live, or a shoppable replay of her last stream).
+   - Tap a product → **Buy now** → pay with a sandbox PayPal account, or choose **Debit or Credit Card** and use a test card from PayPal's [sandbox card generator](https://developer.paypal.com/tools/sandbox/card-testing/).
+   - **No real money moves.** This is PayPal's sandbox, and no credentials are committed to this repo.
+2. **See Maya get paid.** After paying, click **See Maya Makes's side →**. You're now Maya, in her studio. Your sale and her 10% commission are at the top of **Earnings**. Click **Pay me now** to send it to her PayPal with PayPal Payouts.
+3. **Go live as Maya.**
+   - **Go live** → **Share screen / OBS** → tick consent → **Go live**, then share a tab showing a hoodie, a mug or a desk lamp.
+   - The AI spots the products, and they appear on the viewer page.
+   - Try **Ask Seen**: "How much did I earn this week?"
 
 ## Features
 

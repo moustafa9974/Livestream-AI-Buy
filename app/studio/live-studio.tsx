@@ -228,6 +228,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
         <PageHeader
           eyebrow={`${creatorName} · Studio`}
           title={stream.title}
+          description="Go live and Seen's AI watches your video. Products it recognizes appear on your viewer page, ready to buy with PayPal. You never tag anything."
           actions={
             <>
               {last?.mode === "saver" && <Badge variant="secondary">Free-tier saver mode</Badge>}

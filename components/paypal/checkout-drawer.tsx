@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CircleCheck, FlaskConical, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,8 @@ interface Props {
   paypalEnv: "sandbox" | "live";
   /** From /api/attributions: the card click that credits the creator. */
   attributionId: string | null;
+  /** Demo mode: after paying, offer a jump to the creator's earnings to see the commission. */
+  demoMode?: boolean;
 }
 
 type CaptureResult =
@@ -44,16 +47,17 @@ type CaptureResult =
  * Checkout as a non-modal drawer so the video behind it keeps playing. The browser
  * only says which product; the server prices it and creates the PayPal order.
  */
-export function CheckoutDrawer({ product, onClose, clientId, paypalEnv, attributionId }: Props) {
+export function CheckoutDrawer({ product, onClose, clientId, paypalEnv, attributionId, demoMode = false }: Props) {
   const sdk = usePayPalSdk(clientId, paypalEnv, product?.currency ?? "USD");
   const sessions = useRef<{ paypal?: PayPalPaymentSession; card?: PayPalPaymentSession }>({});
   const [busy, setBusy] = useState(false);
   // Shown in place of the payment buttons once PayPal confirms the capture.
   const [receipt, setReceipt] = useState<(Extract<CaptureResult, { status: "captured" }> & { productId: string }) | null>(null);
   // Latest product/attribution for callbacks created once per SDK instance.
-  const current = useRef({ product, attributionId, onClose });
+  const router = useRouter();
+  const current = useRef({ product, attributionId, onClose, demoMode, router });
   useEffect(() => {
-    current.current = { product, attributionId, onClose };
+    current.current = { product, attributionId, onClose, demoMode, router };
   });
 
   useEffect(() => {
@@ -68,11 +72,18 @@ export function CheckoutDrawer({ product, onClose, clientId, paypalEnv, attribut
           const data = (await res.json()) as CaptureResult & { error?: string };
           if (!res.ok) throw new Error(data.error ?? "Capture failed");
           if (data.status === "captured") {
+            // Wording matters: the viewer SPENT money; the creator earned the commission.
             const earned =
               data.creatorEarnedMinor > 0 && data.creatorName
-                ? ` ${data.creatorName} earned ${formatMoney(data.creatorEarnedMinor, data.currency)} from your purchase.`
+                ? ` Your purchase supports ${data.creatorName}, who earns ${formatMoney(data.creatorEarnedMinor, data.currency)} commission.`
                 : "";
-            toast.success(`Paid ✅${earned ? " —" : ""}${earned}`);
+            toast.success(`Paid ✅${earned}`, {
+              duration: 8000,
+              action:
+                current.current.demoMode && data.creatorName
+                  ? { label: `See ${data.creatorName}'s side →`, onClick: () => current.current.router.push("/studio/earnings") }
+                  : undefined,
+            });
             const productId = current.current.product?.id;
             if (productId) setReceipt({ ...data, productId });
           } else if (data.status === "pending") {
@@ -151,7 +162,7 @@ export function CheckoutDrawer({ product, onClose, clientId, paypalEnv, attribut
               </div>
             </SheetHeader>
             {receipt?.productId === product.id ? (
-              <Receipt receipt={receipt} merchantName={product.merchantName} onDone={onClose} />
+              <Receipt receipt={receipt} merchantName={product.merchantName} onDone={onClose} demoMode={demoMode} />
             ) : (
             <div className="flex flex-col gap-5 px-4 pb-6">
               <div className="flex items-baseline justify-between rounded-xl bg-muted/60 px-4 py-3">
@@ -210,10 +221,12 @@ function Receipt({
   receipt,
   merchantName,
   onDone,
+  demoMode,
 }: {
   receipt: Extract<CaptureResult, { status: "captured" }>;
   merchantName: string;
   onDone: () => void;
+  demoMode: boolean;
 }) {
   const rows: Array<[string, string]> = [
     ["Paid", formatMoney(receipt.totalMinor, receipt.currency)],
@@ -246,6 +259,11 @@ function Receipt({
       <Button size="lg" className="h-10" onClick={onDone}>
         Keep watching
       </Button>
+      {demoMode && receipt.creatorName && (
+        <a href="/studio/earnings" className="text-center text-sm font-medium text-primary underline-offset-4 hover:underline">
+          Demo: switch to {receipt.creatorName} and see this sale on the earnings page →
+        </a>
+      )}
     </div>
   );
 }

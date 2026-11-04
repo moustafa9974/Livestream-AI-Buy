@@ -10,9 +10,10 @@ import { AssistantSheet } from "./assistant-sheet";
 import { NotificationsSheet } from "./notifications-sheet";
 
 const LINKS = [
-  { href: "/studio", label: "Live", icon: Radio },
-  { href: "/studio/detections", label: "Detections", icon: ScanSearch },
+  // Same order as the demo tour: see the sale you made as a viewer, then go live.
   { href: "/studio/earnings", label: "Earnings", icon: Wallet },
+  { href: "/studio", label: "Go live", icon: Radio },
+  { href: "/studio/detections", label: "Detections", icon: ScanSearch },
   { href: "/studio/schedule", label: "Schedule", icon: CalendarDays },
   { href: "/studio/settings", label: "Settings", icon: Settings },
   { href: "/studio/demo", label: "Demo panel", icon: FlaskConical },
@@ -42,7 +43,7 @@ export function StudioNav() {
   return (
     <header className="sticky top-0 z-30 border-b bg-card/85 backdrop-blur-md">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5">
-        <Logo suffix="Studio" />
+        <Logo suffix="Creator Studio" />
         <nav aria-label="Studio" className="-mx-1 flex flex-1 gap-0.5 overflow-x-auto text-sm">
           {LINKS.map((l) => {
             const active = l.href === "/studio" ? path === "/studio" : path.startsWith(l.href);

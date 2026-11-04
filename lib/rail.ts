@@ -91,7 +91,23 @@ export async function getRail(streamId: string): Promise<Rail> {
   return { streamId, status: stream.status, version, items };
 }
 
-/** The stream a creator's viewer page follows: live first, then idle, then latest. */
+/**
+ * What a viewer sees when they open a creator's page: the live stream if there is one,
+ * otherwise a shoppable replay of the latest ended stream that has products, so a first
+ * visit (e.g. a judge, before anyone has gone live) is never an empty page.
+ */
+export async function viewerStreamFor(creatorId: string) {
+  return (
+    (await prisma.stream.findFirst({ where: { creatorId, status: "live" }, orderBy: { startedAt: "desc" } })) ??
+    (await prisma.stream.findFirst({
+      where: { creatorId, status: "ended", detections: { some: { state: { in: ["visible", "pinned"] } } } },
+      orderBy: { endedAt: "desc" },
+    })) ??
+    (await currentStreamFor(creatorId))
+  );
+}
+
+/** The stream the creator's studio works on: live first, then idle, then latest. */
 export async function currentStreamFor(creatorId: string) {
   return (
     (await prisma.stream.findFirst({ where: { creatorId, status: "live" }, orderBy: { startedAt: "desc" } })) ??

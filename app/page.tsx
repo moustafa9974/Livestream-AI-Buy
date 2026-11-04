@@ -6,10 +6,18 @@ import { ProductThumb } from "@/components/app/product-thumb";
 // Landing (SPEC §8). Static: no data access, so it prerenders and loads instantly even
 // while a sleeping free Render instance wakes up behind it.
 
+// Who does what. Named roles, because in the demo one person plays all of them.
 const STEPS = [
-  { icon: MonitorUp, title: "Go live", body: "Stream, screen-share or upload a video. Seen samples frames and spots the products on screen." },
-  { icon: ShoppingBag, title: "Tap to buy", body: "Viewers see cards next to the video and pay with PayPal (or a card) without leaving it." },
-  { icon: HandCoins, title: "Get paid", body: "Every sale credits the creator's commission. One tap sends it out with PayPal Payouts." },
+  { icon: MonitorUp, who: "The creator", title: "Goes live", body: "Maya streams, screen-shares or uploads a video. Seen's AI spots the products on screen. Nobody tags anything." },
+  { icon: ShoppingBag, who: "The viewer", title: "Taps to buy", body: "Product cards appear next to the video. The viewer pays with PayPal (or a card) without leaving it. The store gets the money." },
+  { icon: HandCoins, who: "The creator", title: "Gets paid", body: "The sale is credited to Maya's stream, and she earns commission. One tap sends it to her PayPal with PayPal Payouts." },
+];
+
+// The judge's path through the demo: same three steps as the bar on every page.
+const TOUR = [
+  { n: 1, title: "Shop as a viewer", body: "Watch Maya's stream and buy a product with a PayPal sandbox account.", href: "/live/maya-makes" },
+  { n: 2, title: "See Maya get paid", body: "Switch to Maya's studio: your sale and her commission are there. Pay me now.", href: "/studio/earnings" },
+  { n: 3, title: "Go live as Maya", body: "Share a screen with products on it and watch the AI turn them into buy buttons.", href: "/studio" },
 ];
 
 const WHY = [
@@ -34,10 +42,10 @@ export default function Home() {
           <Logo />
           <nav className="flex items-center gap-1 text-sm">
             <Link href="/live/maya-makes" className="rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground">
-              Viewer
+              1 · Viewer
             </Link>
-            <Link href="/studio" className="rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground">
-              Studio
+            <Link href="/studio/earnings" className="rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground">
+              2 · Creator studio
             </Link>
           </nav>
         </header>
@@ -60,19 +68,19 @@ export default function Home() {
                 href="/live/maya-makes"
                 className="brand-bg group inline-flex items-center gap-2 rounded-xl px-5 py-3 font-medium text-white shadow-lift transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
-                Watch as Viewer
+                Start the demo as a viewer
                 <ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden />
               </Link>
               <Link
-                href="/studio"
+                href="/studio/earnings"
                 className="inline-flex items-center gap-2 rounded-xl border bg-card px-5 py-3 font-medium shadow-sm transition hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
-                Open Creator Studio
+                Skip to the creator&apos;s studio
               </Link>
             </div>
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <ShieldCheck className="size-4 text-success" aria-hidden />
-              No signup. The studio opens as demo creator Maya Makes. Payments run in the PayPal sandbox.
+              No signup. You play both sides: a viewer, then creator Maya Makes. Payments run in the PayPal sandbox.
             </p>
           </div>
 
@@ -126,7 +134,9 @@ export default function Home() {
                   </span>
                   <span className="text-sm font-medium text-muted-foreground">Step {i + 1}</span>
                 </div>
-                <h3 className="mt-4 text-lg font-semibold">{s.title}</h3>
+                <h3 className="mt-4 text-lg font-semibold">
+                  <span className="text-primary">{s.who}</span> {s.title.toLowerCase()}
+                </h3>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{s.body}</p>
               </li>
             ))}
@@ -134,7 +144,32 @@ export default function Home() {
         </div>
       </section>
 
-      <section aria-labelledby="why" className="mx-auto w-full max-w-6xl px-4 py-16">
+      <section aria-labelledby="try" className="mx-auto w-full max-w-6xl px-4 py-16">
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Try it in 3 minutes</p>
+        <h2 id="try" className="mt-2 text-3xl font-semibold">Be the viewer first, then the creator</h2>
+        <ol className="mt-10 grid gap-4 md:grid-cols-3">
+          {TOUR.map((t) => (
+            <li key={t.n}>
+              <Link
+                href={t.href}
+                className="surface group flex h-full flex-col gap-2 p-6 transition hover:-translate-y-0.5 hover:shadow-lift focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                <span className="brand-bg grid size-8 place-items-center rounded-full text-sm font-semibold text-white" aria-hidden>
+                  {t.n}
+                </span>
+                <h3 className="font-semibold">{t.title}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{t.body}</p>
+                <span className="mt-auto inline-flex items-center gap-1 pt-2 text-sm font-medium text-primary">
+                  Open <ArrowRight className="size-3.5 transition group-hover:translate-x-0.5" aria-hidden />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section aria-labelledby="why" className="border-t bg-card">
+        <div className="mx-auto w-full max-w-6xl px-4 py-16">
         <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why PayPal</p>
         <h2 id="why" className="mt-2 text-3xl font-semibold">Checkout and payouts on one rail</h2>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -147,6 +182,7 @@ export default function Home() {
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{w.body}</p>
             </div>
           ))}
+        </div>
         </div>
       </section>
 

@@ -4,11 +4,12 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
+import { DemoTour } from "@/components/app/demo-tour";
 import { Logo } from "@/components/app/logo";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { featureStatus } from "@/lib/flags";
-import { currentStreamFor, getRail } from "@/lib/rail";
+import { getRail, viewerStreamFor } from "@/lib/rail";
 import { LiveViewer, type VideoSource } from "./live-viewer";
 
 export const metadata: Metadata = { title: "Watch & shop live" };
@@ -16,6 +17,7 @@ export const metadata: Metadata = { title: "Watch & shop live" };
 export default function LivePage(props: PageProps<"/live/[creatorSlug]">) {
   return (
     <>
+      <DemoTour role="viewer" />
       <header className="border-b bg-card/85 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-2.5">
           <Logo />
@@ -60,7 +62,7 @@ async function LiveContent({
     typeof requested === "string"
       ? await prisma.stream.findFirst({ where: { id: requested, creatorId: creator.id, scheduledFor: null } })
       : null;
-  const stream = replay ?? (await currentStreamFor(creator.id));
+  const stream = replay ?? (await viewerStreamFor(creator.id));
   if (!stream) return <p>{creator.displayName} hasn&apos;t streamed yet.</p>;
 
   const env = getEnv();
@@ -73,6 +75,7 @@ async function LiveContent({
       initialRail={await getRail(stream.id)}
       paypal={paypal.enabled ? { clientId: env.PAYPAL_CLIENT_ID!, env: env.PAYPAL_ENV } : null}
       paypalUnavailableReason={paypal.reason ?? null}
+      demoMode={env.DEMO_MODE}
     />
   );
 }

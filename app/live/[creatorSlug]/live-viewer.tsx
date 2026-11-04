@@ -18,11 +18,13 @@ interface Props {
   initialRail: Rail;
   paypal: { clientId: string; env: "sandbox" | "live" } | null;
   paypalUnavailableReason: string | null;
+  /** Demo mode: one person plays viewer and creator, so checkout offers "see Maya's side". */
+  demoMode: boolean;
 }
 
 const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
 
-export function LiveViewer({ creator, stream, video, initialRail, paypal, paypalUnavailableReason }: Props) {
+export function LiveViewer({ creator, stream, video, initialRail, paypal, paypalUnavailableReason, demoMode }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [rail, setRail] = useState(initialRail);
   const [connected, setConnected] = useState(false);
@@ -101,6 +103,13 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
           <LivePill live={isLive} idleLabel="Replay" />
         </div>
       </header>
+
+      {!isLive && rail.items.length > 0 && (
+        <p role="status" className="rounded-xl border bg-card p-3 text-sm text-muted-foreground">
+          {creator.name} isn&apos;t live right now. This is the latest stream as a <b className="text-foreground">shoppable replay</b>: everything the AI
+          spotted is still for sale, and {creator.name} still earns commission on it.
+        </p>
+      )}
 
       {!paypal && (
         <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
@@ -222,6 +231,7 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
           onClose={() => setCheckout(null)}
           clientId={paypal.clientId}
           paypalEnv={paypal.env}
+          demoMode={demoMode}
         />
       )}
     </>

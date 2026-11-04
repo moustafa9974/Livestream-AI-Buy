@@ -41,7 +41,7 @@ async function EarningsContent() {
       <PageHeader
         eyebrow={creator.displayName}
         title="Earnings"
-        description="Commission from every sale your streams drive, paid straight to your PayPal account."
+        description={`When a viewer buys something they saw on your stream, the store is paid through PayPal and you earn ${creator.commissionRateBps / 100}% commission. Newest sales are at the top of the ledger. Pay me now sends what you have earned to your PayPal account with PayPal Payouts.`}
         actions={
           <PayMeNow
             payableMinor={data.kpis.payableNowMinor}
