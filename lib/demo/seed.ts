@@ -45,7 +45,10 @@ async function wipe() {
     prisma.partnerProduct.deleteMany(),
     prisma.merchant.deleteMany(),
     prisma.creator.deleteMany(),
-  ]);
+  ],
+  // 17 sequential round trips: from far away (or a Neon compute just waking up) this
+  // exceeds Prisma's defaults (2 s to start, 5 s total), so the reset failed.
+  { maxWait: 15_000, timeout: 60_000 });
 }
 
 async function seedCatalog() {
