@@ -11,6 +11,7 @@
 import type { PrismaClient, Prisma } from "../../generated/prisma/client";
 import { merchants, products } from "../../prisma/catalog";
 import { importDemoCache } from "../../scripts/demo-cache";
+import { findSimilarItems } from "../channel3/client";
 import { commissionMinor, sumMinor } from "../money";
 import { embedCatalog } from "../search/catalog";
 
@@ -135,6 +136,27 @@ async function seedCreatorAndStreams(now: Date) {
       },
     ],
   });
+}
+
+/**
+ * Real "also sold online" links for the seeded detections, from Channel3, with the same
+ * query live matching uses. Never invented: if Channel3 is off, out of credits or down,
+ * the cards simply show no links. Cached for 24 h, so repeated resets cost nothing.
+ */
+async function seedSimilarItems(): Promise<number> {
+  const dets = await prisma.detection.findMany({ where: { streamId: PAST_STREAM_ID } });
+  let created = 0;
+  for (const d of dets) {
+    const color = (d.attributes as Record<string, unknown> | null)?.color;
+    const similar = await findSimilarItems(`${typeof color === "string" ? color : ""} ${d.label}`, 3).catch(() => []);
+    for (const [i, s] of similar.entries()) {
+      await prisma.productMatch.create({
+        data: { detectionId: d.id, source: "channel3", externalRef: s as unknown as Prisma.InputJsonValue, score: 1 - i * 0.1, kind: "similar" },
+      });
+      created++;
+    }
+  }
+  return created;
 }
 
 /** Past-stream detections, one per demo item, each matched to its partner product. */
@@ -292,6 +314,8 @@ async function seedSales(now: Date) {
 export interface SeedResult {
   counts: Record<string, number>;
   demoCacheFrames: number;
+  /** Real "also sold online" links fetched from Channel3 for the seeded detections. */
+  similarLinks: number;
   productEmbeddings: { embedded: number; skipped: number };
 }
 
@@ -303,6 +327,7 @@ export async function seedDemo(client: PrismaClient): Promise<SeedResult> {
   await seedCatalog();
   await seedCreatorAndStreams(now);
   await seedPastDetections();
+  const similarLinks = await seedSimilarItems();
   await seedSales(now);
   const demoCacheFrames = await importDemoCache(prisma);
   // Product vectors for matching. Cached by text hash, so reseeding costs no quota;
@@ -316,5 +341,5 @@ export async function seedDemo(client: PrismaClient): Promise<SeedResult> {
     orders: await prisma.order.count(),
     commissions: await prisma.commission.count(),
   };
-  return { counts, demoCacheFrames, productEmbeddings };
+  return { counts, demoCacheFrames, similarLinks, productEmbeddings };
 }

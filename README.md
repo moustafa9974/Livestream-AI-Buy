@@ -53,6 +53,7 @@ No signup. You play both sides, in this order. A bar at the top of every page sa
 - A live product rail pushed to viewers over Server-Sent Events, with a "Shop this moment" timeline for replays.
 - **Live video to viewers, for $0:** the creator's browser streams straight to each viewer with WebRTC, so there's no media server to pay for. If a direct connection isn't possible, viewers see a live frame preview instead.
 - PayPal checkout (JS SDK v6) in a drawer: PayPal button and guest card.
+- A product page for every item: seller, details, PayPal trust lines and **Buy now** (still credits the creator). Plus real "also sold online" store links from Channel3, clearly marked as leaving Seen.
 - Attribution from the exact on-screen moment to the order, the commission and the creator.
 - Commission ledger with a hold window, refunds and reversals, and **Pay me now** via PayPal Payouts with live status.
 - Verified, idempotent PayPal webhooks and a full audit timeline for every money event.

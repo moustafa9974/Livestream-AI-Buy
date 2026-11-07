@@ -50,15 +50,18 @@ export async function getRail(streamId: string): Promise<Rail> {
     }),
   ]);
 
+  // Products whose detection has no "similar items" of its own (e.g. seeded demo data)
+  // reuse real Channel3 results stored for the same product elsewhere. No API calls.
+  const missing = detections
+    .filter((d) => similarFromMatches(d.matches).length === 0)
+    .flatMap((d) => d.matches.filter((m) => m.source === "partner" && m.partnerProductId).map((m) => m.partnerProductId!));
+  const borrowed = await similarByProduct(missing);
+
   const all: RailItem[] = detections.map((d) => {
     const pm = d.matches.find((m) => m.source === "partner" && m.partnerProduct);
     const p = pm?.partnerProduct ?? null;
-    const similar = d.matches
-      .filter((m) => m.source === "channel3" && m.externalRef)
-      .sort((a, b) => b.score - a.score)
-      .map((m) => m.externalRef as unknown as SimilarItem)
-      // Matches stored before toSimilarItems deduped can still repeat a link.
-      .filter((s, i, all) => all.findIndex((o) => o.url === s.url) === i);
+    const own = similarFromMatches(d.matches);
+    const similar = own.length > 0 || !p ? own : (borrowed.get(p.id) ?? []);
     return {
       detectionId: d.id,
       label: d.label,
@@ -102,6 +105,46 @@ export async function getRail(streamId: string): Promise<Rail> {
   // Pinned first, then most recently seen: the thing on screen now is at the top.
   items.sort((a, b) => (a.state === b.state ? b.lastSeenSec - a.lastSeenSec : a.state === "pinned" ? -1 : 1));
   return { streamId, status: stream.status, version, items };
+}
+
+/**
+ * For each product, the Channel3 "similar items" of its most recent detection that has
+ * some. These are real results saved when that detection was matched.
+ */
+export async function similarByProduct(productIds: string[]): Promise<Map<string, SimilarItem[]>> {
+  const out = new Map<string, SimilarItem[]>();
+  const ids = [...new Set(productIds)];
+  if (ids.length === 0) return out;
+  const donors = await prisma.detection.findMany({
+    where: {
+      state: { not: "hidden" },
+      AND: [{ matches: { some: { partnerProductId: { in: ids } } } }, { matches: { some: { source: "channel3" } } }],
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 50,
+    include: { matches: true },
+  });
+  for (const d of donors) {
+    const similar = similarFromMatches(d.matches);
+    for (const m of d.matches) {
+      if (m.partnerProductId && ids.includes(m.partnerProductId) && !out.has(m.partnerProductId) && similar.length) {
+        out.set(m.partnerProductId, similar);
+      }
+    }
+  }
+  return out;
+}
+
+/** Channel3 "similar items" stored on a detection, best first, each link once. */
+export function similarFromMatches(matches: Array<{ source: string; score: number; externalRef: unknown }>): SimilarItem[] {
+  return (
+    matches
+      .filter((m) => m.source === "channel3" && m.externalRef)
+      .sort((a, b) => b.score - a.score)
+      .map((m) => m.externalRef as SimilarItem)
+      // Matches stored before toSimilarItems deduped can still repeat a link.
+      .filter((s, i, all) => all.findIndex((o) => o.url === s.url) === i)
+  );
 }
 
 /** Which of two detections of the same product to show: pinned, then exact match, then latest. */

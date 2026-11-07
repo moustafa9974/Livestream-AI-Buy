@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Pin, Play, Radio, ScanSearch, ShieldCheck, ShoppingBag, TrendingDown } from "lucide-react";
+import { ChevronRight, ExternalLink, Pin, Play, Radio, ScanSearch, ShieldCheck, ShoppingBag, TrendingDown } from "lucide-react";
 import { LivePill } from "@/components/app/live-pill";
 import { LiveStage } from "@/components/live/live-stage";
 import type { IceServers } from "@/components/live/rtc";
@@ -266,7 +266,18 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
                     fresh.has(item.detectionId) ? "motion-safe:animate-[rail-in_400ms_ease-out]" : ""
                   }`}
                 >
-                  <RailCard item={item} canBuy={!!paypal} onBuy={() => buy(item)} />
+                  <RailCard
+                    item={item}
+                    canBuy={!!paypal}
+                    onBuy={() => buy(item)}
+                    // The product page opens in a new tab (video keeps playing) and carries the
+                    // stream moment, so buying from it still credits the creator.
+                    productHref={
+                      item.partner
+                        ? `/shop/${encodeURIComponent(item.partner.productId)}?stream=${encodeURIComponent(stream.id)}&d=${encodeURIComponent(item.detectionId)}&t=${Math.round(item.lastSeenSec)}`
+                        : null
+                    }
+                  />
                 </li>
               ))}
             </ul>
@@ -299,7 +310,7 @@ const initials = (name: string) =>
     .slice(0, 2)
     .toUpperCase();
 
-function RailCard({ item, canBuy, onBuy }: { item: RailItem; canBuy: boolean; onBuy: () => void }) {
+function RailCard({ item, canBuy, onBuy, productHref }: { item: RailItem; canBuy: boolean; onBuy: () => void; productHref: string | null }) {
   const p = item.partner;
   return (
     <div className="flex flex-col gap-3">
@@ -307,7 +318,20 @@ function RailCard({ item, canBuy, onBuy }: { item: RailItem; canBuy: boolean; on
         <ProductThumb title={p ? p.title : item.label} image={p?.image} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="line-clamp-2 text-sm font-medium leading-snug">{p ? p.title : item.label}</p>
+            {p && productHref ? (
+              <a
+                href={productHref}
+                target="_blank"
+                rel="noopener"
+                className="line-clamp-2 text-sm font-medium leading-snug underline-offset-2 hover:text-primary hover:underline"
+                title="Product details, seller and where else it's sold"
+              >
+                {p.title}
+                <ExternalLink className="ms-1 inline size-3 align-baseline text-muted-foreground" aria-label="(opens product page in a new tab)" />
+              </a>
+            ) : (
+              <p className="line-clamp-2 text-sm font-medium leading-snug">{p ? p.title : item.label}</p>
+            )}
             {item.state === "pinned" && <Pin className="mt-0.5 size-3.5 shrink-0 text-primary" aria-label="Pinned by the creator" />}
           </div>
           <p className="truncate text-xs text-muted-foreground">
@@ -350,26 +374,50 @@ function RailCard({ item, canBuy, onBuy }: { item: RailItem; canBuy: boolean; on
       ) : null}
 
       {item.similar.length > 0 && (
-        <details className="group rounded-lg bg-muted/60 px-2.5 py-1.5 text-xs">
-          <summary className="cursor-pointer list-none font-medium text-muted-foreground marker:hidden">
-            <span className="inline-flex items-center gap-1">
-              <ChevronRight className="size-3.5 transition group-open:rotate-90" aria-hidden />
-              View similar ({item.similar.length})
-            </span>
-          </summary>
-          <ul className="mt-1.5 space-y-1.5">
-            {item.similar.map((s) => (
-              <li key={s.url} className="flex justify-between gap-2">
-                <a href={s.url} target="_blank" rel="noopener noreferrer nofollow" className="truncate underline-offset-2 hover:underline">
-                  {s.title}
+        <div className="rounded-lg bg-muted/60 px-2.5 py-2 text-xs">
+          {/* Real stores, visible at a glance. Leaving Seen means no PayPal checkout here
+              and no commission, so say so. */}
+          <p className="mb-1 font-medium text-muted-foreground">{p ? "Also sold online (leaves Seen)" : "Where to buy it (leaves Seen)"}</p>
+          <ul className="space-y-1">
+            {item.similar.slice(0, 3).map((s) => (
+              <li key={s.url}>
+                <a
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="flex items-center justify-between gap-2 rounded px-1 py-0.5 hover:bg-card"
+                  title={s.title}
+                >
+                  <span className="truncate">{s.retailer}</span>
+                  <span className="inline-flex shrink-0 items-center gap-1 tabular-nums text-muted-foreground">
+                    {formatMoney(s.priceMinor, s.currency)}
+                    <ExternalLink className="size-3" aria-hidden />
+                  </span>
                 </a>
-                <span className="shrink-0 tabular-nums text-muted-foreground">
-                  {formatMoney(s.priceMinor, s.currency)} · {s.retailer}
-                </span>
               </li>
             ))}
           </ul>
-        </details>
+          {item.similar.length > 3 && (
+            <details className="group mt-1">
+              <summary className="cursor-pointer list-none px-1 text-muted-foreground marker:hidden">
+                <span className="inline-flex items-center gap-1">
+                  <ChevronRight className="size-3 transition group-open:rotate-90" aria-hidden />
+                  {item.similar.length - 3} more
+                </span>
+              </summary>
+              <ul className="mt-1 space-y-1">
+                {item.similar.slice(3).map((s) => (
+                  <li key={s.url}>
+                    <a href={s.url} target="_blank" rel="noopener noreferrer nofollow" className="flex justify-between gap-2 rounded px-1 py-0.5 hover:bg-card" title={s.title}>
+                      <span className="truncate">{s.retailer}</span>
+                      <span className="shrink-0 tabular-nums text-muted-foreground">{formatMoney(s.priceMinor, s.currency)}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </div>
       )}
     </div>
   );
