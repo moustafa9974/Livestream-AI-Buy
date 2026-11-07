@@ -183,7 +183,9 @@ export function openrouterProvider(): VisionProvider {
           };
           const content = body.choices?.[0]?.message?.content;
           if (res.ok && !body.error && typeof content === "string" && content.trim()) return content;
-          throw new Error(`OpenRouter ${model}: HTTP ${res.status}${body.error?.message ? ` ${body.error.message.slice(0, 120)}` : ""}`);
+          // A 200 with no text happens with free models under load; say so instead of a bare "HTTP 200".
+          const why = body.error?.message ? body.error.message.slice(0, 120) : res.ok ? "empty answer" : "no details";
+          throw new Error(`OpenRouter ${model}: HTTP ${res.status} (${why})`);
         } catch (err) {
           lastErr = err;
           if (signal.aborted) break;

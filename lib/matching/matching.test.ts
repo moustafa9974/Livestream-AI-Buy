@@ -100,6 +100,12 @@ describe("Channel3 parsing", () => {
     ]);
   });
 
+  it("lists an offer once even when Channel3 returns it under two products", () => {
+    const dup = { ...response, products: [...response.products, { ...response.products[0], id: "p1-again", title: "Same offer again" }] };
+    const items = toSimilarItems(dup, 5);
+    expect(items.map((i) => i.url)).toEqual(["https://shop-a.example/p1", "https://shop-b.example/p4"]);
+  });
+
   it("returns [] for malformed responses instead of throwing", () => {
     expect(toSimilarItems({ nope: true }, 3)).toEqual([]);
     expect(toSimilarItems(null, 3)).toEqual([]);

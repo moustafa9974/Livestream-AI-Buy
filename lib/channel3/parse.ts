@@ -46,6 +46,9 @@ export function toSimilarItems(raw: unknown, limit: number): SimilarItem[] {
     if (!offer) continue;
     const priceMinor = priceToMinor(offer.price.price, offer.price.currency);
     if (priceMinor === null || !/^https:\/\//.test(offer.url)) continue;
+    // Channel3 can list the same offer under two products. Once is enough: a repeat
+    // would show twice and count twice in the price comparison.
+    if (out.some((o) => o.url === offer.url)) continue;
     const image = (p.images.find((i) => i.is_main_image) ?? p.images[0])?.url ?? null;
     out.push({
       title: p.title.slice(0, 120),

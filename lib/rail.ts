@@ -56,7 +56,9 @@ export async function getRail(streamId: string): Promise<Rail> {
     const similar = d.matches
       .filter((m) => m.source === "channel3" && m.externalRef)
       .sort((a, b) => b.score - a.score)
-      .map((m) => m.externalRef as unknown as SimilarItem);
+      .map((m) => m.externalRef as unknown as SimilarItem)
+      // Matches stored before toSimilarItems deduped can still repeat a link.
+      .filter((s, i, all) => all.findIndex((o) => o.url === s.url) === i);
     return {
       detectionId: d.id,
       label: d.label,
