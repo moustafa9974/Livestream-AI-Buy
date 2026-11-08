@@ -36,6 +36,8 @@ services:
       # ── AI ──
       - key: GEMINI_API_KEY
         sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false # backup vision when Gemini is busy (free models)
       # ── Demo ──
       - key: DEMO_MODE
         value: "true" # judges get the studio with zero signup
