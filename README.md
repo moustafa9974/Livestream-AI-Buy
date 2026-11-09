@@ -56,6 +56,7 @@ No signup. You play both sides, in this order. A bar at the top of every page sa
 - A product page for every item: seller, details, PayPal trust lines and **Buy now** (still credits the creator). Plus real "also sold online" store links from Channel3, clearly marked as leaving Seen.
 - Attribution from the exact on-screen moment to the order, the commission and the creator.
 - Commission ledger with a hold window, refunds and reversals, and **Pay me now** via PayPal Payouts with live status.
+- **Live earnings (AG Grid):** while Maya watches her earnings, a new sale slides in and glows, changed cells flash (eligible → paid, refunds), and a pinned totals row keeps up. No reload.
 - Verified, idempotent PayPal webhooks and a full audit timeline for every money event.
 - **Viewer shopping agent (agentic commerce):** viewers ask "what's on screen?", "is the mug cheaper elsewhere?" or "buy the mug". It finds the product, compares real prices, and prepares a PayPal checkout. It never pays by itself: the viewer approves in PayPal, and prices come from the database.
 - Creator assistant: Gemini with tools plus the PayPal Agent Toolkit for read-only lookups. It still answers common questions when the AI is out of quota.

@@ -30,7 +30,7 @@ Source of truth: [docs/SPEC.md](docs/SPEC.md). If the spec and official docs dis
 - Dev DB is Neon (free). DATABASE_URL may be the pooled URL; prisma.config.ts derives the direct URL for migrations (or set DIRECT_DATABASE_URL).
 - Studio/sponsors: notifications + Zapier `lib/notify.ts`, assistant `lib/assistant/*` (Gemini tools + PayPal Agent Toolkit, read-only), recap `lib/recap.ts`, KERNEL `lib/kernel/watcher.ts`, demo panel `app/api/demo`, runtime overrides `lib/settings.ts`, seed logic `lib/demo/seed.ts`. E2E: `npm run test:e2e`.
 - Deploy: render.yaml (free, Ohio), docs/DEPLOY.md, `npm run start:prod` migrates then starts. Astropods watcher agent in astropods/ (own package; `WATCHER_RUNTIME=astropods`, Bearer `WATCHER_TOKEN`), Seen side in `app/api/watcher/*`.
-- Dev server weirdness (every page reload-looping with "could not finish this Suspense boundary", or a stale Prisma client after a migration): stop `npm run dev`, delete `.next/`, restart. Happened after moving route files + migrating while the server ran.
+- Dev server weirdness (every page reload-looping with "could not finish this Suspense boundary", a stale Prisma client after a migration, or a `globals.css` edit that never reaches the browser even after a restart): stop `npm run dev`, delete `.next/`, restart. Turbopack's persistent cache can keep serving the old CSS. Happened after moving route files + migrating while the server ran.
 - Shell: Windows. The project folder name has spaces, so quote paths.
 
 ## Commands

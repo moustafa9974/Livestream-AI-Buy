@@ -90,7 +90,12 @@ Bryntum Calendar is a commercial product. Its public **trial** build is for eval
 
 ## AG Grid Community
 
-MIT-licensed `ag-grid-community` + `ag-grid-react` v36 (`AllCommunityModule`, Quartz theme). Grids have a quick filter, sorting, column filters and CSV export. Detection labels are editable inline: a correction re-matches the product.
+MIT-licensed `ag-grid-community` + `ag-grid-react` v36 (`AllCommunityModule`, Quartz theme), themed with the app's CSS tokens.
+- **Live earnings:** the page watches a cheap version endpoint (`/api/studio/earnings/version`) and refreshes its data in place; rows are matched by `getRowId`, so a new sale is inserted (and glows via `rowClassRules`) instead of the grid redrawing.
+- **Cell change flash** (`HighlightChangesModule`): commission, order total and payout status flash when they change (eligible → payout sent → paid, refunds).
+- **Pinned totals row** (`PinnedRowModule`), only summed when all sales share one currency.
+- Quick filter, sorting, column filters and CSV export on every grid. Detection labels are editable inline: a correction re-matches the product.
+- Row grouping is AG Grid Enterprise (paid), so it isn't used.
 
 ## Elastic and Channel3
 
