@@ -51,6 +51,7 @@ The submission video, with every click, and how to get a perfect demo state ever
 1. Right window: the viewer sees Maya's video **in real time** (the "Real-time video" badge), and the rail updates as products appear.
 2. Tap the **mug** → the drawer opens and the video keeps playing → **Debit or Credit Card** (guest, sandbox card) or the PayPal button.
 3. Success toast.
+4. Agentic commerce (10 s): **Ask about these products** → "Is the mug cheaper anywhere else?" → "OK, buy the mug" → Buy card → PayPal. Say: "The agent shops for the viewer, but never pays on its own."
 - **Voice:** "One tap, PayPal or any card, without leaving the video. Prices come from the store's database. The AI never touches money."
 
 ### 2:00–2:30 Creator gets paid

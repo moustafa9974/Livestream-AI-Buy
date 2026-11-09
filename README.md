@@ -57,6 +57,7 @@ No signup. You play both sides, in this order. A bar at the top of every page sa
 - Attribution from the exact on-screen moment to the order, the commission and the creator.
 - Commission ledger with a hold window, refunds and reversals, and **Pay me now** via PayPal Payouts with live status.
 - Verified, idempotent PayPal webhooks and a full audit timeline for every money event.
+- **Viewer shopping agent (agentic commerce):** viewers ask "what's on screen?", "is the mug cheaper elsewhere?" or "buy the mug". It finds the product, compares real prices, and prepares a PayPal checkout. It never pays by itself: the viewer approves in PayPal, and prices come from the database.
 - Creator assistant: Gemini with tools plus the PayPal Agent Toolkit for read-only lookups. It still answers common questions when the AI is out of quota.
 - Shareable AI stream recap page.
 - Zapier events (sale, payout, recap) with an in-app notification center as the fallback.
@@ -125,13 +126,13 @@ How each one is used, and what happens when it's off: [docs/SPONSORS.md](docs/SP
 | Gemini Flash-Lite (vision), with fallback models | Finds products in frames: label, category, attributes, bounding box, prominence, confidence | Structured output with a JSON schema; validated with zod; one "fix your JSON" retry |
 | OpenRouter free vision models | Backup when Gemini is busy or out of quota | Same schema and guardrails |
 | Gemini embeddings | Dedupe detections; match them to products | Cached by text hash; stored in pgvector |
-| Gemini Flash-Lite (text) | Creator assistant (tool calling), stream recap headline | Tools are scoped to the signed-in creator |
+| Gemini Flash-Lite (text) | Creator assistant and viewer shopping agent (tool calling), stream recap headline | Tools are scoped server-side: the creator's own data, or the stream the viewer is watching |
 | Ollama (local) / Claude (paid, off) | Optional providers | `AI_PROVIDER=ollama \| claude` |
 
 **Guardrails (enforced in code, not just in the prompt):**
 - **The AI never sets prices, totals, commission rates or payout amounts.** These come from the database, computed server-side in integer minor units.
 - **Prompt injection.** Text visible in a frame (e.g. a sign saying "ignore your instructions") is treated as data.
-- **Payment actions.** The assistant's payout and refund actions run only when the creator's own latest message asks for them.
+- **Payment actions.** The creator assistant's payout and refund actions run only when the creator's own latest message asks for them. The viewer agent can only *offer* a Buy button, only after the viewer asks to buy, and only for a product on that stream; the viewer still approves in PayPal. It refuses discounts.
 - **Safety filters.** A category denylist (weapons, drugs, adult content), confidence thresholds and a per-stream cap on visible products.
 
 **Privacy:**

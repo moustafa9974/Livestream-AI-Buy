@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, ExternalLink, Pin, Play, Radio, ScanSearch, ShieldCheck, ShoppingBag, TrendingDown } from "lucide-react";
 import { LivePill } from "@/components/app/live-pill";
 import { LiveStage } from "@/components/live/live-stage";
+import { ShopperChat } from "@/components/live/shopper-chat";
 import type { IceServers } from "@/components/live/rtc";
 import { ProductThumb } from "@/components/app/product-thumb";
 import { Button } from "@/components/ui/button";
@@ -287,6 +288,18 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
           </div>
         </aside>
       </div>
+
+      <ShopperChat
+        creatorSlug={creator.slug}
+        creatorName={creator.name}
+        streamId={stream.id}
+        canBuy={!!paypal}
+        onBuy={(detectionId) => {
+          // Same path as a card's Buy button: attribution first, then the PayPal drawer.
+          const item = rail.items.find((i) => i.detectionId === detectionId);
+          if (item) void buy(item);
+        }}
+      />
 
       {paypal && (
         <CheckoutDrawer
