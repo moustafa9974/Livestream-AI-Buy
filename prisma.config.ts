@@ -1,5 +1,13 @@
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
+
+/**
+ * The local Docker database from docker-compose.yml / .env.example. Used when no
+ * DATABASE_URL is set, because `npm install` runs `prisma generate` (which needs no
+ * database) before a fresh clone has a .env: requiring the variable made the very
+ * first setup command fail.
+ */
+const LOCAL_DOCKER_URL = "postgresql://seen:seen@localhost:5432/seen";
 
 /**
  * Migrations need a direct (non-pooled) connection: Neon's pooler runs PgBouncer in
@@ -11,7 +19,7 @@ import { defineConfig, env } from "prisma/config";
 function migrationUrl(): string {
   const direct = process.env.DIRECT_DATABASE_URL;
   if (direct) return direct;
-  return env("DATABASE_URL").replace("-pooler.", ".");
+  return (process.env.DATABASE_URL || LOCAL_DOCKER_URL).replace("-pooler.", ".");
 }
 
 export default defineConfig({
