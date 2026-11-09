@@ -32,7 +32,19 @@ interface BryntumGlobal {
   calendar?: { Calendar: new (config: Record<string, unknown>) => BryntumCalendarInstance };
 }
 
+// One load per page. React runs effects twice in development, and two copies of the
+// script make Bryntum refuse to start ("bundle was loaded multiple times").
+let loading: Promise<NonNullable<BryntumGlobal["calendar"]>> | null = null;
+
 function loadBryntum(): Promise<NonNullable<BryntumGlobal["calendar"]>> {
+  loading ??= injectBryntum().catch((err) => {
+    loading = null; // let a later visit retry, e.g. after a network blip
+    throw err;
+  });
+  return loading;
+}
+
+function injectBryntum(): Promise<NonNullable<BryntumGlobal["calendar"]>> {
   const w = window as unknown as { bryntum?: BryntumGlobal };
   if (w.bryntum?.calendar) return Promise.resolve(w.bryntum.calendar);
   if (!document.querySelector(`link[data-bryntum]`)) {
@@ -68,7 +80,9 @@ export function ScheduleView({ events, bryntumEnabled }: { events: ScheduleEvent
         cal = new Calendar({
           appendTo: host.current,
           date: new Date(),
-          mode: "week",
+          // Month shows streams, payout runs and payable dates at a glance (week view hides
+          // evening streams below the fold).
+          mode: "month",
           height: 640,
           readOnly: true,
           resources: RESOURCES,
