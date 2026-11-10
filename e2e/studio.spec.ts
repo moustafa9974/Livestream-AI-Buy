@@ -26,6 +26,9 @@ test("demo panel drives the viewer rail, ticker and notifications", async ({ bro
 
   await studio.goto("/studio/demo");
   await expect(studio.getByRole("heading", { name: "Demo control panel" })).toBeVisible();
+  // On a busy machine a click can land before React has attached the handlers, and it's
+  // lost. Wait for the page to finish loading first.
+  await studio.waitForLoadState("networkidle");
   await viewer.goto("/live/maya-makes");
 
   // Force a detection (no AI): the viewer's rail gets the buyable card live.

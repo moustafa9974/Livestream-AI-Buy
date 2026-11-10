@@ -28,6 +28,7 @@ model Creator {
   streams       Stream[]
   commissions   Commission[]
   notifications Notification[]
+  bookings      BrandBooking[]
 }
 
 enum StreamSourceType {
@@ -152,6 +153,7 @@ model Merchant {
   name     String
   logoUrl  String?
   products PartnerProduct[]
+  bookings BrandBooking[]
 }
 
 model PartnerProduct {
@@ -171,6 +173,7 @@ model PartnerProduct {
   merchant     Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   matches      ProductMatch[]
   attributions Attribution[]
+  bookings     BrandBooking[]
 }
 
 // ───────────── Viewers, attribution, orders ─────────────
@@ -390,4 +393,31 @@ model KernelSession {
   stream Stream @relation(fields: [streamId], references: [id], onDelete: Cascade)
 
   @@index([status])
+}
+
+// A partner brand asks the creator to feature one of its products in a time slot
+// (Bryntum schedule). The creator approves or declines. No money moves here.
+model BrandBooking {
+  id         String        @id @default(cuid())
+  creatorId  String
+  merchantId String
+  productId  String
+  startsAt   DateTime
+  endsAt     DateTime
+  status     BookingStatus @default(REQUESTED)
+  note       String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  creator  Creator        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  merchant Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  product  PartnerProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, startsAt])
+}
+
+enum BookingStatus {
+  REQUESTED
+  APPROVED
+  DECLINED
 }

@@ -88,6 +88,12 @@ Bryntum Calendar is a commercial product. Its public **trial** build is for eval
 - with `BRYNTUM_ENABLED=true`, the schedule page loads the trial build (pinned `@bryntum/calendar-trial@7.3.7`) from jsDelivr at runtime;
 - with it off, or if the CDN is unreachable, the same events render as a built-in agenda list.
 
+**What it's used for:**
+- Maya's schedule: streams, Friday payout runs, and when pending commissions become payable.
+- **Brand slots:** drag across a day (`features.drag` with `creatable: true`) to request a slot. Our own form replaces Bryntum's editor (`eventEdit: false`), so every slot is validated on the server: future only, 15 min to 3 h, no overlaps, the brand must sell the product. Approve or decline from the list, and the calendar event updates in place (`eventStore.getById` → `record.set` / `remove`).
+- Existing items can't be dragged, resized or deleted (`draggable: false`, `resizable: false`, `beforeEventDelete` → false), because streams and payouts come from the ledger.
+- The API we use was checked against the 7.3.7 type definitions in the trial package.
+
 ## AG Grid Community
 
 MIT-licensed `ag-grid-community` + `ag-grid-react` v36 (`AllCommunityModule`, Quartz theme), themed with the app's CSS tokens.

@@ -29,6 +29,7 @@ const productById = new Map(products.map((p) => [p.id, p]));
 async function wipe() {
   // Children first. One transaction so a failed reset never leaves half a demo.
   await prisma.$transaction([
+    prisma.brandBooking.deleteMany(),
     prisma.notification.deleteMany(),
     prisma.kernelSession.deleteMany(),
     prisma.auditEvent.deleteMany(),
@@ -157,6 +158,42 @@ async function seedSimilarItems(): Promise<number> {
     }
   }
   return created;
+}
+
+/**
+ * Two brand slots relative to "now" (so they're always upcoming): one the creator already
+ * approved, one waiting, so the schedule shows the approve/decline flow straight away.
+ */
+async function seedBrandSlots(now: Date) {
+  const at = (days: number, hour: number) => {
+    const d = new Date(now.getTime() + days * 24 * HOUR);
+    d.setHours(hour, 0, 0, 0);
+    return d;
+  };
+  await prisma.brandBooking.createMany({
+    data: [
+      {
+        id: "seed_booking_kiln",
+        creatorId: CREATOR_ID,
+        merchantId: "seed_merchant_kiln",
+        productId: "seed_prod_ceramic_mug",
+        startsAt: at(2, 19),
+        endsAt: at(2, 20),
+        status: "APPROVED",
+        note: "Show the speckled glaze up close, please",
+      },
+      {
+        id: "seed_booking_signal",
+        creatorId: CREATOR_ID,
+        merchantId: "seed_merchant_signal",
+        productId: "seed_prod_wireless_mic",
+        startsAt: at(4, 20),
+        endsAt: at(4, 21),
+        status: "REQUESTED",
+        note: "Mention the 8-hour battery",
+      },
+    ],
+  });
 }
 
 /** Past-stream detections, one per demo item, each matched to its partner product. */
@@ -329,6 +366,7 @@ export async function seedDemo(client: PrismaClient): Promise<SeedResult> {
   await seedPastDetections();
   const similarLinks = await seedSimilarItems();
   await seedSales(now);
+  await seedBrandSlots(now);
   const demoCacheFrames = await importDemoCache(prisma);
   // Product vectors for matching. Cached by text hash, so reseeding costs no quota;
   // without a Gemini key matching falls back to text scoring.

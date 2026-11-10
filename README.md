@@ -60,6 +60,7 @@ No signup. You play both sides, in this order. A bar at the top of every page sa
 - Verified, idempotent PayPal webhooks and a full audit timeline for every money event.
 - **Viewer shopping agent (agentic commerce):** viewers ask "what's on screen?", "is the mug cheaper elsewhere?" or "buy the mug". It finds the product, compares real prices, and prepares a PayPal checkout. It never pays by itself: the viewer approves in PayPal, and prices come from the database.
 - Creator assistant: Gemini with tools plus the PayPal Agent Toolkit for read-only lookups. It still answers common questions when the AI is out of quota.
+- **Brand slots (Bryntum):** partner stores request a time slot to have a product featured on the creator's stream. Drag on the calendar to request one; the creator approves or declines. Validated on the server: future only, max 3 h, no overlaps, brand must sell the product.
 - Shareable AI stream recap page.
 - Zapier events (sale, payout, recap) with an in-app notification center as the fallback.
 - A "Watch my stream URL" source: a KERNEL cloud browser, optionally driven by an Astropods agent.

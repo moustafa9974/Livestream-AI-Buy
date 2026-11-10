@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { PageHeader } from "@/components/app/page-header";
+import { listBookings } from "@/lib/bookings";
 import { prisma } from "@/lib/db";
 import { featureStatus } from "@/lib/flags";
 import { formatMoney, sumMinor } from "@/lib/money";
@@ -35,10 +36,12 @@ async function Content() {
   await connection();
   const creator = await getCurrentCreator();
   if (!creator) return <p>Sign in to see your schedule.</p>;
-  const [streams, pending, batches] = await Promise.all([
+  const [streams, pending, batches, bookings, merchants] = await Promise.all([
     prisma.stream.findMany({ where: { creatorId: creator.id }, orderBy: { createdAt: "desc" }, take: 20 }),
     prisma.commission.findMany({ where: { creatorId: creator.id, status: "PENDING" } }),
     prisma.payoutBatch.findMany({ where: { commissions: { some: { creatorId: creator.id } } }, orderBy: { createdAt: "desc" }, take: 10 }),
+    listBookings(creator.id),
+    prisma.merchant.findMany({ orderBy: { name: "asc" }, include: { products: { orderBy: { title: "asc" }, select: { id: true, title: true } } } }),
   ]);
 
   const events: ScheduleEvent[] = [];
@@ -83,9 +86,14 @@ async function Content() {
       <PageHeader
         eyebrow={creator.displayName}
         title="Schedule"
-        description="Upcoming streams, automatic payout runs (Fridays) and when pending commissions become payable."
+        description="Upcoming streams, payout runs (Fridays), when commissions become payable, and brand slots: partner stores ask to have a product featured on your stream, and you approve."
       />
-      <ScheduleView events={events} bryntumEnabled={bryntum.enabled} />
+      <ScheduleView
+        events={events}
+        bookings={bookings}
+        brands={merchants.map((m) => ({ id: m.id, name: m.name, products: m.products }))}
+        bryntumEnabled={bryntum.enabled}
+      />
     </>
   );
 }
