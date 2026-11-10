@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ExternalLink, Pin, Play, Radio, ScanSearch, ShieldCheck, ShoppingBag, TrendingDown } from "lucide-react";
+import { ChevronRight, ExternalLink, Pin, ScanSearch, ShieldCheck, ShoppingBag, TrendingDown } from "lucide-react";
 import { LivePill } from "@/components/app/live-pill";
 import { LiveStage } from "@/components/live/live-stage";
+import { SceneFallback } from "@/components/live/scene-fallback";
 import { ShopperChat } from "@/components/live/shopper-chat";
 import type { IceServers } from "@/components/live/rtc";
 import { ProductThumb } from "@/components/app/product-thumb";
@@ -122,16 +123,7 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
           allowFullScreen
         />
       )}
-      {video.kind === "none" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center text-white">
-          <span className="grid size-12 place-items-center rounded-2xl bg-white/10 backdrop-blur" aria-hidden>
-            {isLive ? <Radio className="size-6" /> : <Play className="size-6" />}
-          </span>
-          <p className="max-w-sm text-sm text-white/80">
-            {isLive ? `${creator.name} is live. Products appear next to the video as they show up on screen.` : "Video coming soon."}
-          </p>
-        </div>
-      )}
+      {video.kind === "none" && <SceneFallback items={rail.items} live={isLive} creatorName={creator.name} />}
     </>
   );
 
@@ -183,7 +175,7 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
       )}
 
       {!paypal && (
-        <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <p role="status" className="notice-warn p-3 text-sm">
           PayPal checkout is unavailable ({paypalUnavailableReason}). You can still browse.
         </p>
       )}
@@ -247,6 +239,19 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
                 </span>
               )}
             </div>
+            <div className="mb-3">
+              <ShopperChat
+                creatorSlug={creator.slug}
+                creatorName={creator.name}
+                streamId={stream.id}
+                canBuy={!!paypal}
+                onBuy={(detectionId) => {
+                  // Same path as a card's Buy button: attribution first, then the PayPal drawer.
+                  const item = rail.items.find((i) => i.detectionId === detectionId);
+                  if (item) void buy(item);
+                }}
+              />
+            </div>
             {rail.items.length === 0 && (
               <div className="rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">
                 <ScanSearch className="mx-auto mb-2 size-5 text-primary" aria-hidden />
@@ -288,18 +293,6 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
           </div>
         </aside>
       </div>
-
-      <ShopperChat
-        creatorSlug={creator.slug}
-        creatorName={creator.name}
-        streamId={stream.id}
-        canBuy={!!paypal}
-        onBuy={(detectionId) => {
-          // Same path as a card's Buy button: attribution first, then the PayPal drawer.
-          const item = rail.items.find((i) => i.detectionId === detectionId);
-          if (item) void buy(item);
-        }}
-      />
 
       {paypal && (
         <CheckoutDrawer
@@ -376,7 +369,7 @@ function RailCard({ item, canBuy, onBuy, productHref }: { item: RailItem; canBuy
           {/* PayPal's brand rules: PayPal-branded buttons come from the PayPal SDK (in the
               checkout drawer). Our own trigger stays neutral. */}
           <div className="space-y-1">
-            <Button onClick={onBuy} disabled={!canBuy} aria-label={`Buy ${p.title}`} className="h-10 w-full rounded-xl text-sm font-semibold">
+            <Button onClick={onBuy} disabled={!canBuy} aria-label={`Buy ${p.title}`} className="glow-cta h-10 w-full rounded-xl border-0 text-sm font-semibold text-white hover:brightness-110">
               {canBuy ? "Buy now" : "Checkout unavailable"}
             </Button>
             {canBuy && <p className="text-center text-[11px] text-muted-foreground">Pay with PayPal or card</p>}

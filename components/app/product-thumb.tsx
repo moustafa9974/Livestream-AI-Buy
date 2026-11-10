@@ -42,12 +42,18 @@ export function ProductThumb({ title, image, className }: { title: string; image
   }
   const [, Icon, hue] = KINDS.find(([re]) => re.test(title)) ?? [null, Package, 286];
   return (
+    // Tinted "light box" for the dark theme: a soft coloured glow behind a bright glyph,
+    // so each product kind reads at a glance without a photo.
     <span
       aria-hidden
-      className={cn("grid size-14 shrink-0 place-items-center rounded-lg", className)}
-      style={{ background: `oklch(0.95 0.04 ${hue})`, color: `oklch(0.5 0.16 ${hue})` }}
+      className={cn("grid size-14 shrink-0 place-items-center rounded-xl ring-1 ring-white/10", className)}
+      style={{
+        background: `radial-gradient(120% 120% at 30% 20%, oklch(0.42 0.13 ${hue} / 0.9), oklch(0.22 0.06 ${hue}) 70%)`,
+        color: `oklch(0.9 0.11 ${hue})`,
+        boxShadow: `0 8px 24px -12px oklch(0.6 0.2 ${hue} / 0.8), inset 0 1px 0 oklch(1 0 0 / 0.12)`,
+      }}
     >
-      <Icon className="size-6" strokeWidth={1.75} />
+      <Icon className="size-[46%]" strokeWidth={1.75} />
     </span>
   );
 }

@@ -77,7 +77,7 @@ function injectBryntum(): Promise<NonNullable<BryntumGlobal["calendar"]>> {
   if (w.bryntum?.calendar) return Promise.resolve(w.bryntum.calendar);
   if (!document.querySelector(`link[data-bryntum]`)) {
     // v7 ships structural CSS plus a separate theme file.
-    for (const file of ["calendar.css", "stockholm-light.css"]) {
+    for (const file of ["calendar.css", "stockholm-dark.css"]) {
       const css = document.createElement("link");
       css.rel = "stylesheet";
       css.href = `${CDN}/${file}`;

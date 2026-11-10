@@ -46,7 +46,7 @@ export function ProductBuy({ product, inStock, from, paypal, demoMode }: Props) 
   return (
     <>
       <div className="space-y-1">
-        <Button onClick={buy} disabled={!canBuy || busy} className="h-11 w-full rounded-xl text-base font-semibold">
+        <Button onClick={buy} disabled={!canBuy || busy} className="glow-cta h-11 w-full rounded-xl border-0 text-base font-semibold text-white hover:brightness-110">
           {!inStock ? "Out of stock" : !paypal ? "Checkout unavailable" : busy ? "Opening…" : "Buy now"}
         </Button>
         {canBuy && <p className="text-center text-xs text-muted-foreground">Pay with PayPal or card</p>}

@@ -27,7 +27,7 @@ export default function ProductPage(props: PageProps<"/shop/[productId]">) {
       <header className="border-b bg-card/85 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-2.5">
           <Logo />
-          <span className="rounded-full bg-paypal/25 px-2.5 py-1 text-xs font-medium text-paypal-ink">Checkout by PayPal</span>
+          <span className="rounded-full border border-paypal/30 bg-paypal/10 px-2.5 py-1 text-xs font-medium text-paypal">Checkout by PayPal</span>
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6">

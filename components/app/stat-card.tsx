@@ -5,7 +5,7 @@ const TONES = {
   violet: "bg-primary/10 text-primary",
   blue: "bg-brand-2/10 text-brand-2",
   green: "bg-success/12 text-success",
-  amber: "bg-amber-500/12 text-amber-600",
+  amber: "bg-warning/12 text-warning",
 } as const;
 
 /** KPI tile: tinted icon, label, big number, small hint. */

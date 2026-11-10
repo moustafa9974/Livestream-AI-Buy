@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { AllCommunityModule, ModuleRegistry, themeQuartz, type ColDef, type GridOptions } from "ag-grid-community";
+import { AllCommunityModule, ModuleRegistry, colorSchemeDark, themeQuartz, type ColDef, type GridOptions } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 // Colours come from the app's CSS tokens (app/globals.css) so the grid matches the studio.
-const theme = themeQuartz.withParams({
+// colorSchemeDark covers the parts our tokens don't (checkboxes, menus, scrollbars).
+const theme = themeQuartz.withPart(colorSchemeDark).withParams({
   fontFamily: "inherit",
   fontSize: 13,
   headerFontWeight: 600,
@@ -22,7 +23,8 @@ const theme = themeQuartz.withParams({
   borderColor: "var(--border)",
   headerBackgroundColor: "var(--muted)",
   headerTextColor: "var(--muted-foreground)",
-  rowHoverColor: "color-mix(in oklch, var(--accent), transparent 40%)",
+  rowHoverColor: "color-mix(in oklch, var(--accent), transparent 55%)",
+  oddRowBackgroundColor: "color-mix(in oklch, var(--muted), transparent 60%)",
 });
 
 interface Props<T> {

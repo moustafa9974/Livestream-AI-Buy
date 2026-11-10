@@ -288,7 +288,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
         />
 
         {!ai.enabled && (
-          <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          <p role="status" className="notice-warn p-3 text-sm">
             AI provider <b>{ai.provider}</b> unavailable ({ai.reason}).{" "}
             {ai.demoCache ? "Cached demo results will still be used." : "Set DEMO_CACHE=true to use cached results."}
           </p>
@@ -319,14 +319,15 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
               className="pointer-events-none absolute rounded-lg border-2 border-white shadow-[0_0_0_3px_oklch(0.53_0.23_286/0.45)] motion-safe:transition-all"
               style={{ left: `${d.bbox![0] * 100}%`, top: `${d.bbox![1] * 100}%`, width: `${d.bbox![2] * 100}%`, height: `${d.bbox![3] * 100}%` }}
             >
-              <span className="absolute -top-7 left-0 whitespace-nowrap rounded-md bg-white px-2 py-0.5 text-xs font-medium text-foreground shadow">
+              <span className="absolute -top-7 left-0 whitespace-nowrap rounded-md bg-white px-2 py-0.5 text-xs font-medium text-neutral-900 shadow">
                 {d.label}
               </span>
             </div>
           ))}
           {!source && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center text-white">
-              <span className="grid size-12 place-items-center rounded-2xl bg-white/10 backdrop-blur" aria-hidden>
+              <div aria-hidden className="hero-scan pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-transparent via-[oklch(0.74_0.16_225/0.14)] to-transparent" />
+              <span className="glass relative grid size-14 place-items-center rounded-2xl shadow-[0_0_30px_oklch(0.6_0.25_300/0.45)]" aria-hidden>
                 <ScanSearch className="size-6" />
               </span>
               <p className="font-medium">Pick a source below to start</p>
@@ -425,7 +426,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
         </section>
 
         {live && last?.note && (
-          <p role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          <p role="alert" className="notice-warn p-3 text-sm">
             {last.note}
           </p>
         )}

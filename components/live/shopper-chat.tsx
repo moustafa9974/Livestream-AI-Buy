@@ -87,7 +87,8 @@ export function ShopperChat({
     <>
       <Button
         onClick={() => setOpen(true)}
-        className="brand-bg fixed bottom-5 right-5 z-40 h-12 gap-2 rounded-full border-0 px-5 text-white shadow-lift hover:brightness-110"
+        // Sits at the top of the product rail (it used to float and covered the cards).
+        className="glass h-11 w-full gap-2 rounded-xl text-foreground hover:bg-accent"
       >
         <Sparkles aria-hidden />
         Ask about these products
