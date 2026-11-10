@@ -268,17 +268,12 @@ export function ScheduleView({
     <>
       {!bryntumEnabled || state === "failed" ? (
         <>
-          <p className="text-xs text-muted-foreground">
-            {state === "failed"
-              ? "Bryntum couldn't load, so this is the built-in list view."
-              : "Built-in list view. Set BRYNTUM_ENABLED=true to use the Bryntum Calendar (trial)."}
-          </p>
           <AgendaList events={[...events, ...bookings.filter((b) => b.status !== "DECLINED").map(bookingEvent)]} />
         </>
       ) : (
         <>
           {state === "loading" && <p className="text-sm text-muted-foreground">Loading Bryntum Calendar…</p>}
-          {state === "ready" && <p className="text-sm text-muted-foreground">Tip: drag across a day to request a brand slot.</p>}
+          {state === "ready" && <p className="text-sm text-muted-foreground">Drag across a day to request a brand slot.</p>}
           <div ref={host} className="surface overflow-hidden" />
         </>
       )}

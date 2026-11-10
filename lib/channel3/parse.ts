@@ -64,8 +64,16 @@ export function toSimilarItems(raw: unknown, limit: number): SimilarItem[] {
 }
 
 /** "$12 less than similar items": median of same-currency similar prices vs ours. */
+/** Similar items priced beyond this factor of ours (either way) aren't comparable. */
+export const COMPARABLE_PRICE_FACTOR = 3;
+
 export function priceComparison(ourMinor: number, currency: string, similar: SimilarItem[]) {
-  const prices = similar.filter((s) => s.currency === currency).map((s) => s.priceMinor).sort((a, b) => a - b);
+  // Luxury look-alikes (or bulk packs) would make the saving meaningless, so leave them out.
+  const prices = similar
+    .filter((s) => s.currency === currency)
+    .map((s) => s.priceMinor)
+    .filter((p) => p <= ourMinor * COMPARABLE_PRICE_FACTOR && p * COMPARABLE_PRICE_FACTOR >= ourMinor)
+    .sort((a, b) => a - b);
   if (prices.length === 0) return null;
   const mid = Math.floor(prices.length / 2);
   const median = prices.length % 2 ? prices[mid] : Math.round((prices[mid - 1] + prices[mid]) / 2);

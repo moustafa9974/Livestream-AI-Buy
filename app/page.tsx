@@ -1,10 +1,18 @@
 import Link from "next/link";
 import { ArrowRight, Globe, HandCoins, MonitorUp, ScanSearch, ShieldCheck, ShoppingBag, Wallet } from "lucide-react";
 import { Logo } from "@/components/app/logo";
+import { PayPalLogo } from "@/components/app/paypal-logo";
 import { HeroDemo } from "@/components/landing/hero-demo";
 
 // Landing (SPEC §8). Static: no data access, so it prerenders and loads instantly even
 // while a sleeping free Render instance wakes up behind it.
+
+const STATS = [
+  { value: "1 tap", label: "to pay with PayPal, without leaving the video" },
+  { value: "0 tags", label: "no links or manual tagging: the AI sees it" },
+  { value: "Seconds", label: "from on screen to a buy button" },
+  { value: "Minutes", label: "to pay creators with PayPal Payouts, not weeks" },
+];
 
 // Who does what. Named roles, because in the demo one person plays all of them.
 const STEPS = [
@@ -27,7 +35,8 @@ const WHY = [
 ];
 
 
-const STACK = ["PayPal", "Gemini", "Channel3", "Elastic", "KERNEL", "Astropods", "Zapier", "AG Grid", "Bryntum", "Render", "Neon"];
+// PayPal gets its real logo in the footer; the rest are listed by name.
+const STACK = ["Gemini", "Channel3", "Elastic", "KERNEL", "Astropods", "Zapier", "AG Grid", "Bryntum", "Render", "Neon"];
 
 export default function Home() {
   return (
@@ -48,8 +57,8 @@ export default function Home() {
         <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pb-20 pt-10 md:grid-cols-[1.05fr_1fr] md:pt-16">
           <div className="space-y-7">
             <p className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur">
-              <span className="size-1.5 rounded-full bg-primary" aria-hidden />
-              AI shoppable video · powered by PayPal
+              <span className="size-1.5 rounded-full bg-primary motion-safe:animate-pulse" aria-hidden />
+              AI shoppable video · powered by <PayPalLogo className="h-3.5" />
             </p>
             <h1 className="text-4xl font-semibold leading-[1.08] md:text-6xl">
               If it&apos;s on screen, <span className="brand-text">it&apos;s shoppable.</span>
@@ -61,7 +70,7 @@ export default function Home() {
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/live/maya-makes"
-                className="brand-bg group inline-flex items-center gap-2 rounded-xl px-5 py-3 font-medium text-white shadow-lift transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className="glow-cta group inline-flex items-center gap-2 rounded-xl px-5 py-3 font-medium text-white transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
                 Start the demo as a viewer
                 <ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden />
@@ -83,7 +92,20 @@ export default function Home() {
         </section>
       </div>
 
-      <section aria-labelledby="how" className="border-y bg-card">
+      {/* Stats band: the pitch in four numbers. */}
+      <section aria-label="Seen in numbers" className="border-y bg-card/60">
+        <dl className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-px overflow-hidden px-4 py-8 md:grid-cols-4">
+          {STATS.map((s) => (
+            <div key={s.value} className="px-2 py-3 text-center md:px-6">
+              <dt className="sr-only">{s.label}</dt>
+              <dd className="brand-text font-heading text-3xl font-bold md:text-4xl">{s.value}</dd>
+              <dd className="mt-1 text-sm text-muted-foreground">{s.label}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <section aria-labelledby="how" className="border-b bg-card">
         <div className="mx-auto w-full max-w-6xl px-4 py-16">
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">How it works</p>
           <h2 id="how" className="mt-2 text-3xl font-semibold">From frame to payout in three steps</h2>
@@ -132,8 +154,12 @@ export default function Home() {
 
       <section aria-labelledby="why" className="border-t bg-card">
         <div className="mx-auto w-full max-w-6xl px-4 py-16">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why PayPal</p>
-        <h2 id="why" className="mt-2 text-3xl font-semibold">Checkout and payouts on one rail</h2>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <PayPalLogo className="h-9 md:h-10" />
+          <span className="h-6 w-px bg-border" aria-hidden />
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why PayPal</p>
+        </div>
+        <h2 id="why" className="mt-4 text-3xl font-semibold">Checkout and payouts on one rail</h2>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {WHY.map((w) => (
             <div key={w.title} className="surface p-6 transition hover:-translate-y-0.5 hover:shadow-lift">
@@ -154,7 +180,10 @@ export default function Home() {
             <Logo />
             <p>Built for &quot;Build What&apos;s Next with PayPal and AI&quot;. Runs on free tiers.</p>
           </div>
-          <ul className="flex flex-wrap gap-1.5" aria-label="Built with">
+          <ul className="flex flex-wrap items-center gap-1.5" aria-label="Built with">
+            <li className="me-1.5">
+              <PayPalLogo className="h-5" />
+            </li>
             {STACK.map((s) => (
               <li key={s} className="rounded-full border bg-background px-2.5 py-0.5 text-xs">
                 {s}

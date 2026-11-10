@@ -120,4 +120,12 @@ describe("Channel3 parsing", () => {
     expect(priceComparison(4500, "USD", similar)).toEqual({ similarMedianMinor: 5725, savingsMinor: 1225 });
     expect(priceComparison(4500, "EUR", similar)).toBeNull();
   });
+
+  it("ignores look-alikes priced in another league (no '$345 less' for $35 sunglasses)", () => {
+    const at = (priceMinor: number) => ({ title: "x", priceMinor, currency: "USD", retailer: "r", url: `https://r/${priceMinor}`, image: null });
+    // $290 and $570 designer frames vs our $35: not comparable, so no badge at all.
+    expect(priceComparison(3500, "USD", [at(29050), at(56963)])).toBeNull();
+    // Comparable ones still count; the outlier is dropped from the median.
+    expect(priceComparison(3500, "USD", [at(4200), at(5000), at(56963)])).toEqual({ similarMedianMinor: 4600, savingsMinor: 1100 });
+  });
 });

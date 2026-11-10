@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
-import { getEnv } from "@/lib/env";
 import { allFeatureStatuses, type Feature } from "@/lib/flags";
 import { getCurrentCreator } from "@/lib/session";
 import { ZapierSettings } from "./zapier-settings";
@@ -35,10 +34,9 @@ async function Content() {
   const creator = await getCurrentCreator();
   if (!creator) return <p>Sign in to change settings.</p>;
   const features = allFeatureStatuses();
-  const env = getEnv();
   return (
     <>
-      <PageHeader eyebrow={creator.displayName} title="Settings" description="Payouts, alerts and which integrations are switched on." />
+      <PageHeader eyebrow={creator.displayName} title="Settings" description="Payouts, alerts and connected services." />
 
       <section aria-labelledby="payouts" className="surface space-y-2 p-5">
         <h2 id="payouts" className="font-semibold">Payouts</h2>
@@ -52,31 +50,27 @@ async function Content() {
         <h2 id="zapier" className="font-semibold">Zapier</h2>
         <p className="text-sm text-muted-foreground">
           Get sales, payouts and stream recaps in Gmail, Slack, Discord, Google Sheets… Create a Zap with the <b>Webhooks by Zapier → Catch Hook</b>{" "}
-          trigger and paste its URL here. Recipes: docs/SPONSORS.md.
+          trigger and paste its URL here.
         </p>
         {!features.zapier.enabled && (
-          <p className="rounded-lg border border-dashed p-3 text-sm">Zapier is off ({features.zapier.reason}). Events still appear in the 🔔 notification center.</p>
+          <p className="rounded-lg border border-dashed p-3 text-sm">Alerts appear in the 🔔 notification center. Connect Zapier to also get them by email, Slack or text.</p>
         )}
         <ZapierSettings initialUrl={creator.zapierWebhookUrl ?? ""} enabled={features.zapier.enabled} />
       </section>
 
       <section aria-labelledby="integrations" className="surface space-y-3 p-5">
-        <h2 id="integrations" className="font-semibold">Integrations</h2>
+        <h2 id="integrations" className="font-semibold">Connected services</h2>
+        {/* Only what's connected: a list of "off" switches is noise for the creator. */}
         <ul className="grid gap-2 sm:grid-cols-2">
-          {(Object.keys(LABELS) as Feature[]).map((f) => (
-            <li key={f} className="flex items-center justify-between gap-2 rounded-xl border bg-background p-3 text-sm">
-              <span>{LABELS[f]}</span>
-              {features[f].enabled ? (
-                <Badge className="bg-success/12 text-success">on</Badge>
-              ) : (
-                <Badge variant="outline" className="text-muted-foreground" title={features[f].reason}>off</Badge>
-              )}
-            </li>
-          ))}
+          {(Object.keys(LABELS) as Feature[])
+            .filter((f) => features[f].enabled)
+            .map((f) => (
+              <li key={f} className="flex items-center justify-between gap-2 rounded-xl border bg-background p-3 text-sm">
+                <span>{LABELS[f]}</span>
+                <Badge className="bg-success/12 text-success">connected</Badge>
+              </li>
+            ))}
         </ul>
-        <p className="text-xs text-muted-foreground">
-          AI provider: {env.AI_PROVIDER} · vision model {env.GEMINI_VISION_MODEL} (+ fallbacks) · demo cache {env.DEMO_CACHE ? "on" : "off"}
-        </p>
       </section>
     </>
   );

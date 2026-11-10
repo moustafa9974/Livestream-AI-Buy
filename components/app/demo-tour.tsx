@@ -27,7 +27,7 @@ export function DemoTour({ role }: { role: "viewer" | "creator" }) {
               <span>
                 <b>You&apos;re a viewer</b>
                 {/* Phones get the short version: the long sentence wrapped into a tall column. */}
-                <span className="hidden sm:inline"> watching creator Maya Makes. Tap a product to buy it with PayPal.</span>
+                <span className="hidden sm:inline"> watching Maya Makes</span>
               </span>
             </>
           ) : (
@@ -35,7 +35,7 @@ export function DemoTour({ role }: { role: "viewer" | "creator" }) {
               <Clapperboard className="size-4 shrink-0" aria-hidden />
               <span>
                 <b>You&apos;re Maya Makes, the creator.</b>
-                <span className="hidden sm:inline"> This is her private studio (demo login, no signup).</span>
+                <span className="hidden sm:inline"> Private studio, demo login</span>
               </span>
             </>
           )}

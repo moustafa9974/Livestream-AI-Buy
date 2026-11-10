@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CircleCheck, FlaskConical, Lock } from "lucide-react";
+import { FlaskConical, Lock } from "lucide-react";
+import { SuccessCheck } from "@/components/app/success-check";
 import { Button } from "@/components/ui/button";
 import { ProductThumb } from "@/components/app/product-thumb";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -237,9 +238,7 @@ function Receipt({
   return (
     <div className="flex flex-col gap-5 px-4 pb-6" role="status">
       <div className="flex flex-col items-center gap-2 pt-2 text-center">
-        <span className="grid size-12 place-items-center rounded-full bg-success/12 text-success" aria-hidden>
-          <CircleCheck className="size-7" />
-        </span>
+        <SuccessCheck />
         <p className="text-lg font-semibold">Payment complete</p>
         <p className="text-sm text-muted-foreground">PayPal will email your receipt. The seller ships your order.</p>
       </div>

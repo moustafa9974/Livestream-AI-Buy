@@ -9,11 +9,10 @@ interface Props {
   products: Array<{ id: string; title: string }>;
   holdHours: number;
   holdOverridden: boolean;
-  aiProvider: string;
   kernelRunning: number;
 }
 
-export function DemoPanel({ products, holdHours, holdOverridden, aiProvider, kernelRunning }: Props) {
+export function DemoPanel({ products, holdHours, holdOverridden, kernelRunning }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [productId, setProductId] = useState(products.find((p) => p.title.includes("Hoodie: Black"))?.id ?? products[0]?.id ?? "");
@@ -68,14 +67,13 @@ export function DemoPanel({ products, holdHours, holdOverridden, aiProvider, ker
     <div className="space-y-4">
       <section className="surface space-y-2 border-destructive/20 p-5">
         <h2 className="font-semibold">Reset</h2>
-        <p className="text-sm text-muted-foreground">Restore the seeded demo (creator, catalog, past sales). Keeps AI caches and quota counters.</p>
+        <p className="text-sm text-muted-foreground">Restore the demo creator, products and past sales.</p>
         {btn("reset", "Reset demo data", {}, "Wipe all orders, detections and payouts and restore the demo?", "destructive")}
       </section>
 
       <section className="surface space-y-3 p-5">
         <h2 className="font-semibold">Detections</h2>
         <div className="flex flex-wrap gap-2">{btn("inject_frame", "Inject a known frame (mugs)")}</div>
-        <p className="text-xs text-muted-foreground">Runs a stored screenshot through the real pipeline (uses 1 AI request unless cached).</p>
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={productId}
@@ -92,11 +90,11 @@ export function DemoPanel({ products, holdHours, holdOverridden, aiProvider, ker
           {btn("force_detection", "Force detection", { productId })}
           {btn("simulate_sale", "Simulate a sale (no money)", { productId })}
         </div>
-        <p className="text-xs text-muted-foreground">Force detection puts the product on the viewers&apos; rail with zero AI quota. A simulated sale exercises commission, ticker and Zapier without PayPal.</p>
+        <p className="text-xs text-muted-foreground">Force detection shows a product to viewers instantly. A simulated sale records a sale without a payment.</p>
       </section>
 
       <section className="surface space-y-3 p-5">
-        <h2 className="font-semibold">Runtime settings</h2>
+        <h2 className="font-semibold">Payout timing</h2>
         <p className="text-sm">
           Commission hold: <b>{holdHours} h</b> {holdOverridden && <span className="text-muted-foreground">(overridden)</span>}
         </p>
@@ -104,18 +102,11 @@ export function DemoPanel({ products, holdHours, holdOverridden, aiProvider, ker
           {btn("settings", "Hold 0 h (instant payouts)", { commissionHoldHours: 0 })}
           {btn("settings", "Hold 72 h (realistic)", { commissionHoldHours: 72 })}
         </div>
-        <p className="text-sm">
-          AI provider: <b>{aiProvider}</b>
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {btn("settings", "Use Gemini", { aiProvider: "gemini" })}
-          {btn("settings", "Use Ollama (local)", { aiProvider: "ollama" })}
-        </div>
       </section>
 
       <section className="surface space-y-2 p-5">
         <h2 className="font-semibold">KERNEL</h2>
-        <p className="text-sm">Running cloud browsers: {kernelRunning}</p>
+        <p className="text-sm">Cloud browsers running: {kernelRunning}</p>
         {btn("kill_kernel", "Kill all KERNEL sessions", {}, undefined, "destructive")}
       </section>
     </div>

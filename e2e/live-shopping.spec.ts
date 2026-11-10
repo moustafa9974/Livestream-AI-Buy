@@ -61,7 +61,6 @@ test("screen share of mugs becomes a buyable card for viewers", async ({ browser
   const card = viewer.getByRole("listitem").filter({ hasText: "Speckled Stoneware Mug" });
   await expect(card).toBeVisible({ timeout: 90_000 });
   console.log(`mug card visible ${((Date.now() - started) / 1000).toFixed(1)}s after Go live`);
-  console.log(`studio status: ${await creator.locator("p[aria-live=polite]").innerText()}`);
 
   // Checkout drawer opens and the PayPal JS SDK loads (paying needs a human login).
   await card.getByRole("button", { name: /^Buy / }).click();

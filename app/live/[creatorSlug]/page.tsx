@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { DemoTour } from "@/components/app/demo-tour";
 import { Logo } from "@/components/app/logo";
+import { PayPalLogo } from "@/components/app/paypal-logo";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { featureStatus } from "@/lib/flags";
@@ -22,7 +23,9 @@ export default function LivePage(props: PageProps<"/live/[creatorSlug]">) {
       <header className="border-b bg-card/85 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-2.5">
           <Logo />
-          <span className="rounded-full border border-paypal/30 bg-paypal/10 px-2.5 py-1 text-xs font-medium text-paypal">Checkout by PayPal</span>
+          <span className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground">
+            Checkout by <PayPalLogo className="h-3.5" />
+          </span>
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-6">
@@ -75,7 +78,6 @@ async function LiveContent({
       video={videoSourceFor(stream)}
       initialRail={await getRail(stream.id)}
       paypal={paypal.enabled ? { clientId: env.PAYPAL_CLIENT_ID!, env: env.PAYPAL_ENV } : null}
-      paypalUnavailableReason={paypal.reason ?? null}
       demoMode={env.DEMO_MODE}
       liveVideo={featureStatus("liveVideo").enabled ? { iceServers: iceServersFrom(env) } : null}
     />

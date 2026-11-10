@@ -6,6 +6,7 @@ import { connection } from "next/server";
 import { ArrowLeft, ExternalLink, ShieldCheck, Store, Truck, Users } from "lucide-react";
 import { DemoTour } from "@/components/app/demo-tour";
 import { Logo } from "@/components/app/logo";
+import { PayPalLogo } from "@/components/app/paypal-logo";
 import { ProductThumb } from "@/components/app/product-thumb";
 import { getEnv } from "@/lib/env";
 import { featureStatus } from "@/lib/flags";
@@ -27,7 +28,9 @@ export default function ProductPage(props: PageProps<"/shop/[productId]">) {
       <header className="border-b bg-card/85 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-2.5">
           <Logo />
-          <span className="rounded-full border border-paypal/30 bg-paypal/10 px-2.5 py-1 text-xs font-medium text-paypal">Checkout by PayPal</span>
+          <span className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground">
+            Checkout by <PayPalLogo className="h-3.5" />
+          </span>
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6">

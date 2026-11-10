@@ -19,7 +19,7 @@ export default function DemoPage() {
 async function Content() {
   await connection();
   const env = getEnv();
-  if (!env.DEMO_MODE) return <p>The demo control panel is only available with DEMO_MODE=true.</p>;
+  if (!env.DEMO_MODE) return <p>The demo control panel isn&apos;t available.</p>;
   const [products, settings, kernelRunning] = await Promise.all([
     prisma.partnerProduct.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
     getRuntimeSettings(),
@@ -30,13 +30,12 @@ async function Content() {
       <PageHeader
         eyebrow="Presenter tools"
         title="Demo control panel"
-        description="For live demos: recover from a bad network, an empty AI quota or an unlucky frame. Only shown with DEMO_MODE=true."
+        description="Presenter tools: reset the demo, show a product instantly, or record a sale without a payment."
       />
       <DemoPanel
         products={products}
         holdHours={settings.commissionHoldHours ?? env.COMMISSION_HOLD_HOURS}
         holdOverridden={settings.commissionHoldHours !== undefined}
-        aiProvider={settings.aiProvider ?? env.AI_PROVIDER}
         kernelRunning={kernelRunning}
       />
     </>

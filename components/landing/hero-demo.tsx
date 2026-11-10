@@ -65,7 +65,18 @@ export function HeroDemo() {
 
         <ul className="flex flex-col gap-2">
           {CARDS.map((c) => (
-            <li key={c.title} className="hero-seq rounded-xl border border-white/10 bg-card/80 p-2.5 shadow-card" style={seq(c.seq)}>
+            <li key={c.title} className="relative rounded-xl border border-dashed border-white/10">
+              {/* Placeholder that stays when the card fades out between loops. */}
+              <div className="flex gap-2.5 p-2.5 opacity-40">
+                <span className="size-11 shrink-0 rounded-xl bg-white/5" />
+                <div className="flex-1 space-y-1.5 pt-1">
+                  <span className="block h-2.5 w-4/5 rounded bg-white/10" />
+                  <span className="block h-2 w-1/2 rounded bg-white/5" />
+                  <span className="block h-2.5 w-1/3 rounded bg-white/10" />
+                </div>
+              </div>
+              <span className="mx-2.5 mb-2.5 block h-7 rounded-lg bg-white/5 opacity-40" />
+              <div className="hero-seq absolute -inset-px rounded-xl border border-white/10 bg-card p-2.5 shadow-card" style={seq(c.seq)}>
               <div className="flex gap-2.5">
                 <ProductThumb title={c.title} className="size-11" />
                 <div className="min-w-0">
@@ -75,6 +86,7 @@ export function HeroDemo() {
                 </div>
               </div>
               <span className="glow-cta mt-2 block rounded-lg py-1.5 text-center text-xs font-semibold text-white">Buy now</span>
+              </div>
             </li>
           ))}
         </ul>

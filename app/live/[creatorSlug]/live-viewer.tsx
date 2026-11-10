@@ -22,7 +22,6 @@ interface Props {
   video: VideoSource;
   initialRail: Rail;
   paypal: { clientId: string; env: "sandbox" | "live" } | null;
-  paypalUnavailableReason: string | null;
   /** Demo mode: one person plays viewer and creator, so checkout offers "see Maya's side". */
   demoMode: boolean;
   /** Real-time video from the creator's browser (WebRTC); null when the feature is off. */
@@ -31,7 +30,7 @@ interface Props {
 
 const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
 
-export function LiveViewer({ creator, stream, video, initialRail, paypal, paypalUnavailableReason, demoMode, liveVideo }: Props) {
+export function LiveViewer({ creator, stream, video, initialRail, paypal, demoMode, liveVideo }: Props) {
   const router = useRouter();
   const [wentLive, setWentLive] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -176,7 +175,7 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
 
       {!paypal && (
         <p role="status" className="notice-warn p-3 text-sm">
-          PayPal checkout is unavailable ({paypalUnavailableReason}). You can still browse.
+          Checkout is unavailable right now. You can still browse.
         </p>
       )}
 

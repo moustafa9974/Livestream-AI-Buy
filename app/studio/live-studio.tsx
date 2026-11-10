@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
-import { Activity, CircleCheck, ExternalLink, Eye, EyeOff, Film, Globe, MonitorUp, Pencil, Pin, ScanSearch, Upload, type LucideIcon } from "lucide-react";
+import { CircleCheck, ExternalLink, Eye, EyeOff, Film, Globe, MonitorUp, Pencil, Pin, ScanSearch, Upload, type LucideIcon } from "lucide-react";
 import { LivePill } from "@/components/app/live-pill";
 import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -267,8 +267,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
           description="Go live and Seen's AI watches your video. Products it recognizes appear on your viewer page, ready to buy with PayPal. You never tag anything."
           actions={
             <>
-              {last?.mode === "saver" && <Badge variant="secondary">Free-tier saver mode</Badge>}
-              {last?.mode === "cache_only" && <Badge variant="secondary">Cache-only mode</Badge>}
+              {(last?.mode === "saver" || last?.mode === "cache_only") && <Badge variant="secondary">AI saver mode</Badge>}
               <LivePill live={live} />
               {live && liveVideo && (source === "screen" || source === "upload") && (
                 <Badge variant="secondary" title="Viewers watching your video in real time, browser to browser">
@@ -289,8 +288,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
 
         {!ai.enabled && (
           <p role="status" className="notice-warn p-3 text-sm">
-            AI provider <b>{ai.provider}</b> unavailable ({ai.reason}).{" "}
-            {ai.demoCache ? "Cached demo results will still be used." : "Set DEMO_CACHE=true to use cached results."}
+            The AI is unavailable right now.{ai.demoCache ? " Products from the demo video are still recognized." : ""}
           </p>
         )}
 
@@ -396,7 +394,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
                 </div>
               )
             ) : (
-              <p className="text-xs text-muted-foreground">KERNEL unavailable ({kernel.reason}). Screen sharing and uploads still work.</p>
+              <p className="text-xs text-muted-foreground">Watching a stream URL isn&apos;t available right now. Screen sharing and uploads still work.</p>
             )}
             <p className="text-xs text-muted-foreground">Only your own channel. Capped per session and per day to protect credits; stops when the stream ends.</p>
           </div>
@@ -430,18 +428,12 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
             {last.note}
           </p>
         )}
-        {live && source === "screen" && (
-          <p className="text-xs text-muted-foreground">
-            Tip: share the window or tab with your products in it. Sampling keeps running while you switch tabs.
+        {/* Only problems are worth the creator's attention; frame counters were debug output. */}
+        {live && sampler.error && (
+          <p role="alert" className="notice-warn p-3 text-sm">
+            Seen couldn&apos;t send the last frame. It will keep trying.
           </p>
         )}
-        <p className="text-xs text-muted-foreground" aria-live="polite">
-          <Activity className="me-1.5 inline size-3.5 align-[-2px]" aria-hidden />
-          Frames sent {sampler.sent} · skipped (unchanged) {sampler.skipped}
-          {last && <> · last: {last.source}{last.provider ? ` (${last.provider})` : ""}, {last.itemsSeen} items, {last.latencyMs} ms (lookup {last.timings.lookupMs} · AI {last.timings.aiMs} · tracker {last.timings.trackerMs})</>}
-          {last?.note && <> · {last.note}</>}
-          {sampler.error && <span className="text-destructive"> · {sampler.error}</span>}
-        </p>
       </section>
 
       <aside className="space-y-4">
