@@ -1,0 +1,1465 @@
+[
+ {
+  "key": "vision:003b730073007b00",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.021,
+       0.183,
+       0.126,
+       0.16199999999999998
+      ],
+      "label": "ceramic mug",
+      "category": "home/mug",
+      "attributes": {
+       "color": "brown",
+       "style": "coffee mug",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 1,
+      "prominence": 1,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "Browser window showing search results for ceramic mugs"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:02503273b677324a",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.005,
+       0.388,
+       0.122,
+       0.347
+      ],
+      "label": "black shearling winter jacket",
+      "category": "apparel/jacket",
+      "attributes": {
+       "color": "black",
+       "style": "winter jacket",
+       "material": "shearling"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.303,
+       0.386,
+       0.11399999999999999,
+       0.349
+      ],
+      "label": "olive green bomber jacket",
+      "category": "apparel/jacket",
+      "attributes": {
+       "color": "green",
+       "style": "bomber"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.423,
+       0.388,
+       0.11500000000000005,
+       0.346
+      ],
+      "label": "black quilted bomber jacket",
+      "category": "apparel/jacket",
+      "attributes": {
+       "color": "black",
+       "style": "quilted bomber"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.732,
+       0.387,
+       0.131,
+       0.349
+      ],
+      "label": "green winter jacket with shearling collar",
+      "category": "apparel/jacket",
+      "attributes": {
+       "color": "green",
+       "style": "winter coat"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.85,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.876,
+       0.388,
+       0.11399999999999999,
+       0.347
+      ],
+      "label": "black hooded winter coat",
+      "category": "apparel/jacket",
+      "attributes": {
+       "color": "black",
+       "style": "parka"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.85,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "A computer screen showing a web image search results page for jackets."
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:045a55a9495b6b6a",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.335,
+       0.712,
+       0.14199999999999996,
+       0.262
+      ],
+      "label": "striped ceramic mug",
+      "category": "home/mug",
+      "attributes": {
+       "color": "multi-color",
+       "style": "striped",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.773,
+       0.727,
+       0.135,
+       0.247
+      ],
+      "label": "white ceramic mug with floral pattern",
+      "category": "home/mug",
+      "attributes": {
+       "color": "white",
+       "pattern": "floral",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.85,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.178,
+       0.262,
+       0.10300000000000004,
+       0.23099999999999998
+      ],
+      "label": "white ceramic mug with photo",
+      "category": "home/mug",
+      "attributes": {
+       "color": "white",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.8,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.039,
+       0.691,
+       0.10499999999999998,
+       0.25
+      ],
+      "label": "speckled ceramic mug",
+      "category": "home/mug",
+      "attributes": {
+       "color": "blue",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.8,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.384,
+       0.249,
+       0.10599999999999998,
+       0.253
+      ],
+      "label": "white ceramic mug with text",
+      "category": "home/mug",
+      "attributes": {
+       "color": "white",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.75,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "search results page showing various ceramic mugs on a computer screen"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:05cd8ec686ce8436",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.102,
+       0.18,
+       0.17800000000000005,
+       0.182
+      ],
+      "label": "computer monitor",
+      "category": "electronics/computer_monitor",
+      "attributes": {
+       "color": "black",
+       "style": "widescreen"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.105,
+       0.39,
+       0.138,
+       0.08699999999999997
+      ],
+      "label": "mechanical keyboard",
+      "category": "electronics/keyboard",
+      "attributes": {
+       "color": "black",
+       "style": "gaming"
+      },
+      "brandGuess": null,
+      "confidence": 0.85,
+      "prominence": 0.8,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.203,
+       0.626,
+       0.124,
+       0.138
+      ],
+      "label": "gaming computer monitor",
+      "category": "electronics/computer_monitor",
+      "attributes": {
+       "color": "white",
+       "style": "gaming"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.75,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.672,
+       0.587,
+       0.21599999999999997,
+       0.269
+      ],
+      "label": "leather sofa",
+      "category": "furniture/sofa",
+      "attributes": {
+       "color": "brown",
+       "style": "classic",
+       "material": "leather"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.6,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.857,
+       0.757,
+       0.12,
+       0.121
+      ],
+      "label": "coffee table",
+      "category": "furniture/table",
+      "attributes": {
+       "material": "wood"
+      },
+      "brandGuess": null,
+      "confidence": 0.7,
+      "prominence": 0.4,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "YouTube search results page featuring video thumbnails of desk setups and a music album cover"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:1601a5494982a4d6",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.015,
+       0.304,
+       0.15100000000000002,
+       0.304
+      ],
+      "label": "grey hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "grey",
+       "style": "oversized"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.181,
+       0.243,
+       0.15800000000000003,
+       0.391
+      ],
+      "label": "dark blue hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "blue",
+       "style": "oversized"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.356,
+       0.232,
+       0.129,
+       0.40900000000000003
+      ],
+      "label": "white hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "white",
+       "style": "oversized"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.499,
+       0.252,
+       0.15700000000000003,
+       0.37
+      ],
+      "label": "black skeleton graphic hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "black",
+       "style": "graphic"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.692,
+       0.255,
+       0.1150000000000001,
+       0.30799999999999994
+      ],
+      "label": "black graphic hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "black",
+       "style": "graphic"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "online shopping product listing showing various hoodies"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:166a4b6b4b606968",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.027,
+       0.144,
+       0.119,
+       0.31100000000000005
+      ],
+      "label": "black zip-up hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "black",
+       "style": "zip-up",
+       "pattern": "solid"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.336,
+       0.144,
+       0.15699999999999997,
+       0.31300000000000006
+      ],
+      "label": "gray oversized hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "gray",
+       "style": "oversized",
+       "pattern": "solid"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.8,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.5,
+       0.238,
+       0.15700000000000003,
+       0.28300000000000003
+      ],
+      "label": "black graphic hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "black",
+       "style": "pullover",
+       "pattern": "graphic print"
+      },
+      "brandGuess": null,
+      "confidence": 0.85,
+      "prominence": 0.75,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.838,
+       0.191,
+       0.14400000000000002,
+       0.44
+      ],
+      "label": "black oversized hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "black",
+       "style": "oversized",
+       "pattern": "solid"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.7,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "A grid of various black and gray hoodies displayed on a shopping or social media web interface."
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:48084a0282888281",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.137,
+       0.272,
+       0.248,
+       0.728
+      ],
+      "label": "mens zip up hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "black",
+       "style": "zip-up",
+       "pattern": "solid",
+       "material": "unknown"
+      },
+      "brandGuess": "Hearthz",
+      "confidence": 1,
+      "prominence": 1,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "web browser showing a product page for a men's zip-up hoodie on the Walmart website"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:48085c1c9c9c9496",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.137,
+       0.275,
+       0.248,
+       0.713
+      ],
+      "label": "black zip-up hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "black",
+       "style": "zip-up hoodie"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.95,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "A screen share showing a product page on Walmart's website featuring a black zip-up hooded sweatshirt."
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:697c3823a56d1c1c",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.49,
+       0.11,
+       0.16000000000000003,
+       0.41300000000000003
+      ],
+      "label": "black quilted jacket",
+      "category": "apparel/jacket",
+      "attributes": {
+       "color": "black",
+       "style": "quilted jacket"
+      },
+      "brandGuess": "Carhartt",
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.495,
+       0.618,
+       0.15000000000000002,
+       0.382
+      ],
+      "label": "blue rain jacket",
+      "category": "apparel/jacket",
+      "attributes": {
+       "color": "blue"
+      },
+      "brandGuess": "Columbia",
+      "confidence": 0.95,
+      "prominence": 0.8,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.038,
+       0.112,
+       0.095,
+       0.35500000000000004
+      ],
+      "label": "white jacket",
+      "category": "apparel/jacket",
+      "attributes": {
+       "color": "white",
+       "style": "jacket"
+      },
+      "brandGuess": "PAIGE",
+      "confidence": 0.9,
+      "prominence": 0.7,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.333,
+       0.257,
+       0.15299999999999997,
+       0.488
+      ],
+      "label": "maroon fleece jacket",
+      "category": "apparel/jacket",
+      "attributes": {
+       "color": "maroon"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.7,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.187,
+       0.648,
+       0.11299999999999999,
+       0.352
+      ],
+      "label": "yellow rain jacket",
+      "category": "apparel/jacket",
+      "attributes": {
+       "color": "yellow"
+      },
+      "brandGuess": "Columbia",
+      "confidence": 0.9,
+      "prominence": 0.6,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "screen_share"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:6f9fd9fc0230f7fb",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0,
+       0,
+       0.539,
+       0.805
+      ],
+      "label": "silver laptop",
+      "category": "electronics/laptop",
+      "attributes": {
+       "color": "silver",
+       "style": "modern",
+       "material": "aluminum"
+      },
+      "brandGuess": "Apple",
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.061,
+       0.673,
+       0.8200000000000001,
+       0.32699999999999996
+      ],
+      "label": "wireless keyboard",
+      "category": "electronics/keyboard",
+      "attributes": {
+       "color": "white",
+       "style": "minimalist"
+      },
+      "brandGuess": "Apple",
+      "confidence": 0.95,
+      "prominence": 0.8,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.666,
+       0.392,
+       0.33399999999999996,
+       0.46499999999999997
+      ],
+      "label": "wireless trackpad",
+      "category": "electronics/computer-accessory",
+      "attributes": {
+       "color": "silver",
+       "material": "aluminum"
+      },
+      "brandGuess": "Apple",
+      "confidence": 0.9,
+      "prominence": 0.75,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.491,
+       0,
+       0.30800000000000005,
+       0.335
+      ],
+      "label": "ceramic mug",
+      "category": "home/mug",
+      "attributes": {
+       "color": "beige",
+       "style": "rustic",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 0.92,
+      "prominence": 0.7,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "An overhead close-up shot of a wooden desk featuring a laptop, wireless keyboard, wireless trackpad, and a ceramic mug."
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:80202020246d4515",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.203,
+       0.198,
+       0.16499999999999998,
+       0.34700000000000003
+      ],
+      "label": "striped coffee mug",
+      "category": "home/mug",
+      "attributes": {
+       "color": "multi-colored",
+       "style": "coffee mug",
+       "pattern": "striped",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 0.99,
+      "prominence": 0.95,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "screen share showing search results of striped coffee mugs"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:802020204445655c",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.213,
+       0.168,
+       0.13499999999999998,
+       0.42899999999999994
+      ],
+      "label": "green quilted bomber jacket",
+      "category": "apparel/jacket",
+      "attributes": {
+       "color": "green",
+       "style": "quilted bomber"
+      },
+      "brandGuess": "HIMONE",
+      "confidence": 0.98,
+      "prominence": 0.95,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "web browser showing product search results for a quilted bomber jacket"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:8020222020555665",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.251,
+       0.188,
+       0.063,
+       0.408
+      ],
+      "label": "black oversized hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "black",
+       "style": "oversized",
+       "pattern": "solid",
+       "material": "fleece"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "A screen display showing search results and images of oversized black hoodies on an e-commerce or image search site."
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:8040424020464c44",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.218,
+       0.166,
+       0.13299999999999998,
+       0.42399999999999993
+      ],
+      "label": "black zip up hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "black",
+       "style": "zip up"
+      },
+      "brandGuess": "Hearthz",
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.508,
+       0.622,
+       0.10199999999999998,
+       0.32599999999999996
+      ],
+      "label": "black hooded sweatshirt",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "black",
+       "style": "casual"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.6,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.363,
+       0.624,
+       0.10599999999999998,
+       0.32099999999999995
+      ],
+      "label": "black pullover hoodie",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "black"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.5,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "screen_share"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:8050505034250626",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.219,
+       0.199,
+       0.162,
+       0.35700000000000004
+      ],
+      "label": "red ceramic coffee mug",
+      "category": "home/mug",
+      "attributes": {
+       "color": "red",
+       "style": "classic",
+       "material": "ceramic"
+      },
+      "brandGuess": "Le Creuset",
+      "confidence": 0.98,
+      "prominence": 0.95,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "screen share showing a web search for coffee mugs"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:8070705030000000",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.215,
+       0.21,
+       0.162,
+       0.3400000000000001
+      ],
+      "label": "ceramic mug with floral pattern",
+      "category": "home/mug",
+      "attributes": {
+       "color": "white",
+       "style": "floral",
+       "pattern": "floral",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.146,
+       0.205,
+       0.07800000000000001,
+       0.22
+      ],
+      "label": "ceramic mug",
+      "category": "home/mug",
+      "attributes": {
+       "color": "white",
+       "style": "minimalist",
+       "pattern": "floral",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.7,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "A screen share showing a web browser with a photo of decorative ceramic mugs."
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:80707450242d754d",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.218,
+       0.211,
+       0.163,
+       0.3330000000000001
+      ],
+      "label": "ceramic floral mug",
+      "category": "home/mug",
+      "attributes": {
+       "color": "white",
+       "pattern": "floral",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 0.98,
+      "prominence": 0.95,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "image search results displaying various ceramic mugs with floral designs"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:880058028288808a",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.134,
+       0.276,
+       0.254,
+       0.724
+      ],
+      "label": "black zip-up hooded sweatshirt",
+      "category": "apparel/hoodie",
+      "attributes": {
+       "color": "black",
+       "style": "zip-up hoodie, drop shoulder, oversized"
+      },
+      "brandGuess": null,
+      "confidence": 0.98,
+      "prominence": 0.95,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "screen share"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:966a4cd8d8d8e4cc",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0.205,
+       0.381,
+       0.31900000000000006,
+       0.582
+      ],
+      "label": "laptop",
+      "category": "electronics/laptop",
+      "attributes": {
+       "color": "silver"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.591,
+       0.381,
+       0.08300000000000007,
+       0.17800000000000005
+      ],
+      "label": "coffee mug",
+      "category": "home/mug",
+      "attributes": {
+       "color": "brown"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.7,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.341,
+       0.817,
+       0.329,
+       0.18300000000000005
+      ],
+      "label": "wireless keyboard",
+      "category": "electronics/keyboard",
+      "attributes": {
+       "color": "white"
+      },
+      "brandGuess": null,
+      "confidence": 0.85,
+      "prominence": 0.6,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "screen_share"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:e9595fdb9d4a7595",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0,
+       0,
+       0.606,
+       1
+      ],
+      "label": "laptop computer",
+      "category": "electronics/computer",
+      "attributes": {
+       "color": "black",
+       "style": "slim",
+       "pattern": "none",
+       "material": "metal"
+      },
+      "brandGuess": null,
+      "confidence": 1,
+      "prominence": 1,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.185,
+       0.168,
+       0.187,
+       0.31599999999999995
+      ],
+      "label": "white ceramic mug",
+      "category": "home/kitchenware",
+      "attributes": {
+       "color": "white",
+       "style": "classic",
+       "pattern": "plain",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 1,
+      "prominence": 0.8,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.319,
+       0.103,
+       0.139,
+       0.251
+      ],
+      "label": "square desk lamp",
+      "category": "home/lighting",
+      "attributes": {
+       "color": "white",
+       "style": "minimalist",
+       "pattern": "none",
+       "material": "plastic"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.7,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.408,
+       0.418,
+       0.14300000000000007,
+       0.10300000000000004
+      ],
+      "label": "black computer mouse",
+      "category": "electronics/computer-accessories",
+      "attributes": {
+       "color": "black",
+       "style": "ergonomic",
+       "pattern": "none",
+       "material": "plastic"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.6,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "A desk setup featuring a laptop, a mug, a desk lamp, and a mouse."
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:e9595fdbdd57249a",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0,
+       0,
+       0.715,
+       1
+      ],
+      "label": "laptop",
+      "category": "electronics/laptop",
+      "attributes": {
+       "color": "space gray",
+       "material": "aluminum"
+      },
+      "brandGuess": "Apple",
+      "confidence": 0.98,
+      "prominence": 0.95,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.187,
+       0.172,
+       0.187,
+       0.311
+      ],
+      "label": "white mug",
+      "category": "home/mug",
+      "attributes": {
+       "color": "white",
+       "style": "minimalist",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.65,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.321,
+       0.108,
+       0.14200000000000002,
+       0.249
+      ],
+      "label": "desk lamp",
+      "category": "home/lamp",
+      "attributes": {
+       "color": "white",
+       "style": "cube"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.5,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.404,
+       0.42,
+       0.23399999999999999,
+       0.10400000000000004
+      ],
+      "label": "computer mouse",
+      "category": "electronics/mouse",
+      "attributes": {
+       "color": "black"
+      },
+      "brandGuess": null,
+      "confidence": 0.85,
+      "prominence": 0.4,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "desk"
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:e9777dd599526595",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0,
+       0,
+       0.722,
+       1
+      ],
+      "label": "black laptop computer",
+      "category": "electronics/laptop",
+      "attributes": {
+       "color": "black",
+       "style": "modern"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.9,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.169,
+       0.154,
+       0.18199999999999997,
+       0.31699999999999995
+      ],
+      "label": "white ceramic mug",
+      "category": "home/mug",
+      "attributes": {
+       "color": "white",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.7,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.407,
+       0.418,
+       0.16899999999999998,
+       0.10600000000000004
+      ],
+      "label": "black computer mouse",
+      "category": "electronics/mouse",
+      "attributes": {
+       "color": "black"
+      },
+      "brandGuess": null,
+      "confidence": 0.85,
+      "prominence": 0.4,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "A close-up shot of a dark workspace featuring a black laptop, a white ceramic coffee mug being held, and a computer mouse on a desk."
+   },
+   "provider": "gemini"
+  }
+ },
+ {
+  "key": "vision:ea5f1fdb9a526595",
+  "value": {
+   "result": {
+    "items": [
+     {
+      "bbox": [
+       0,
+       0,
+       0.715,
+       1
+      ],
+      "label": "laptop computer",
+      "category": "electronics/computer",
+      "attributes": {
+       "color": "black",
+       "style": "portable"
+      },
+      "brandGuess": null,
+      "confidence": 0.98,
+      "prominence": 0.95,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.323,
+       0.108,
+       0.139,
+       0.252
+      ],
+      "label": "table lamp",
+      "category": "home/lighting",
+      "attributes": {
+       "color": "white",
+       "style": "modern",
+       "material": "plastic"
+      },
+      "brandGuess": null,
+      "confidence": 0.95,
+      "prominence": 0.8,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.101,
+       0.027,
+       0.10799999999999998,
+       0.34299999999999997
+      ],
+      "label": "glass dome rose",
+      "category": "home/decor",
+      "attributes": {
+       "color": "pink",
+       "material": "glass"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.7,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.407,
+       0.415,
+       0.16699999999999998,
+       0.10800000000000004
+      ],
+      "label": "computer mouse",
+      "category": "electronics/peripherals",
+      "attributes": {
+       "color": "black"
+      },
+      "brandGuess": null,
+      "confidence": 0.9,
+      "prominence": 0.6,
+      "mentionedInAudio": false
+     },
+     {
+      "bbox": [
+       0.66,
+       0,
+       0.21399999999999997,
+       0.335
+      ],
+      "label": "coffee mug",
+      "category": "home/drinkware",
+      "attributes": {
+       "color": "white",
+       "material": "ceramic"
+      },
+      "brandGuess": null,
+      "confidence": 0.85,
+      "prominence": 0.5,
+      "mentionedInAudio": false
+     }
+    ],
+    "scene": "desk workspace during a livestream"
+   },
+   "provider": "gemini"
+  }
+ }
+]

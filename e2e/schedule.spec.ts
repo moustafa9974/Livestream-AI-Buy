@@ -8,7 +8,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-/** A future day in the visible month, away from the seeded slots (+2 and +4 days). */
+/** A future day in the visible month, away from the seeded slots (+3 and +5 days). */
 function targetDay(): Date {
   const d = new Date();
   d.setDate(d.getDate() + 6);
@@ -77,9 +77,9 @@ test("the server refuses an overlapping slot and the form says why", async ({ pa
   await openSchedule(page);
   await page.getByRole("button", { name: "Request a slot" }).click();
   const sheet = page.getByRole("dialog", { name: "Request a brand slot" });
-  // Same time as the seeded approved Kiln slot (in 2 days, 19:00–20:00 local).
+  // Same time as the seeded approved Kiln slot (in 3 days, 19:00–20:00 local).
   const start = new Date();
-  start.setDate(start.getDate() + 2);
+  start.setDate(start.getDate() + 3);
   start.setHours(19, 15, 0, 0);
   const local = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
   await sheet.getByLabel("Starts").fill(local(start));

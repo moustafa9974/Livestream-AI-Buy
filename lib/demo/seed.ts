@@ -96,7 +96,10 @@ async function seedCreatorAndStreams(now: Date) {
         creatorId: CREATOR_ID,
         title: "Desk setup tour + fall fits",
         sourceType: "upload",
-        videoAssetUrl: "/demo/demo.mp4",
+        // No video: this 42-minute replay's products (hoodie, sneakers, …) aren't in the
+        // short demo clip, so its stage shows the "AI scene" instead. The demo clip belongs
+        // to the live demo stream below, where Seen detects what's really in it.
+        videoAssetUrl: null,
         status: "ended",
         consentOwnContent: true,
         consentAt: pastStart,
@@ -177,8 +180,8 @@ async function seedBrandSlots(now: Date) {
         creatorId: CREATOR_ID,
         merchantId: "seed_merchant_kiln",
         productId: "seed_prod_ceramic_mug",
-        startsAt: at(2, 19),
-        endsAt: at(2, 20),
+        startsAt: at(3, 19),
+        endsAt: at(3, 20),
         status: "APPROVED",
         note: "Show the speckled glaze up close, please",
       },
@@ -187,8 +190,8 @@ async function seedBrandSlots(now: Date) {
         creatorId: CREATOR_ID,
         merchantId: "seed_merchant_signal",
         productId: "seed_prod_wireless_mic",
-        startsAt: at(4, 20),
-        endsAt: at(4, 21),
+        startsAt: at(5, 20),
+        endsAt: at(5, 21),
         status: "REQUESTED",
         note: "Mention the 8-hour battery",
       },

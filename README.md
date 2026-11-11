@@ -208,6 +208,11 @@ npm run typecheck && npm run lint
 - **Real-time audio** product mentions (Web Speech context exists behind `AUDIO_CONTEXT`).
 - **Brand marketplace.** Brands book a product feature slot in an upcoming stream.
 
+## Credits
+
+- **Demo video** (`public/demo/demo.mp4`): "Cozy workspace with warm lighting", from [Pexels](https://www.pexels.com/video/cozy-workspace-with-warm-lighting-39425743/), used under the [Pexels License](https://www.pexels.com/license/) (free to use, attribution not required). Hands only, no identifiable people. Seen's AI detects the mug, lamp, laptop and mouse in it; the cached results ship in `prisma/demo-vision-cache.json`, so the demo works with no AI quota.
+- **PayPal logo**: PayPal's own wordmark, loaded unmodified from PayPal's CDN (the files of PayPal's open-source `@paypal/sdk-logos`). PayPal is a trademark of PayPal, Inc. and isn't covered by this project's license.
+
 ## License
 
 [MIT](LICENSE)

@@ -82,7 +82,11 @@ test("earnings and detections grids, schedule, settings", async ({ page, request
   await expect(page.getByRole("region", { name: "Detections" }).getByText("arc led desk lamp").first()).toBeVisible();
 
   await page.goto("/studio/schedule");
-  await expect(page.getByText("Fall fits try-on (live)")).toBeVisible();
+  // Agenda lists every event; the month view folds a busy day into "+1 more" (e.g. a
+  // Friday with a payout run, a brand slot and a stream), which hid this one some days.
+  await page.locator(".b-calendar").waitFor();
+  await page.getByRole("button", { name: "Agenda" }).click();
+  await expect(page.getByText("Fall fits try-on (live)").first()).toBeVisible();
   await expect(page.getByText("Automatic payout run").first()).toBeVisible();
 
   await page.goto("/studio/settings");

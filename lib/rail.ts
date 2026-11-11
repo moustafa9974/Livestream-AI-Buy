@@ -1,5 +1,6 @@
 import { priceComparison, type SimilarItem } from "./channel3/parse";
 import { prisma } from "./db";
+import { itemKind } from "./item-kind";
 
 /**
  * What viewers see next to the video: confirmed (visible/pinned) detections with their
@@ -94,13 +95,14 @@ export async function getRail(streamId: string): Promise<Rail> {
   // One card per product. The AI often describes the same item several ways across frames
   // ("black hoodie", "black fleece hoodie"), and each can match the same store product.
   // The tracker can't always merge those, so the rail does: keep the best detection.
+  // Items with no store product ("laptop computer" / "black laptop computer") merge by kind.
+  const key = (i: RailItem) => (i.partner ? `p:${i.partner.productId}` : `k:${itemKind(i.label)}`);
   const best = new Map<string, RailItem>();
   for (const i of actionable) {
-    if (!i.partner) continue;
-    const cur = best.get(i.partner.productId);
-    if (!cur || betterCard(i, cur)) best.set(i.partner.productId, i);
+    const cur = best.get(key(i));
+    if (!cur || betterCard(i, cur)) best.set(key(i), i);
   }
-  const items = actionable.filter((i) => !i.partner || best.get(i.partner.productId) === i);
+  const items = actionable.filter((i) => best.get(key(i)) === i);
 
   // Pinned first, then most recently seen: the thing on screen now is at the top.
   items.sort((a, b) => (a.state === b.state ? b.lastSeenSec - a.lastSeenSec : a.state === "pinned" ? -1 : 1));
@@ -151,6 +153,7 @@ export function similarFromMatches(matches: Array<{ source: string; score: numbe
 function betterCard(a: RailItem, b: RailItem): boolean {
   if (a.state !== b.state) return a.state === "pinned";
   if (a.partner?.kind !== b.partner?.kind) return a.partner?.kind === "exact";
+  if (!a.partner && a.similar.length !== b.similar.length) return a.similar.length > b.similar.length;
   return a.lastSeenSec > b.lastSeenSec;
 }
 
