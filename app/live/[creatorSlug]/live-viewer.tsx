@@ -181,7 +181,8 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, demoMo
 
       <div className="grid gap-6 lg:grid-cols-[1fr_370px]">
         <section className="min-w-0 space-y-4">
-          <div className="stage-dots relative aspect-video w-full overflow-hidden rounded-2xl shadow-lift ring-1 ring-black/5">
+          {/* Width capped by window height (see the studio stage): exact 16:9, so highlight boxes line up. */}
+          <div className="stage-dots relative mx-auto aspect-video w-full overflow-hidden rounded-2xl shadow-lift ring-1 ring-black/5" style={{ maxWidth: "calc(70vh * 16 / 9)" }}>
             {isLive && liveVideo ? (
               <LiveStage creatorSlug={creator.slug} streamId={stream.id} iceServers={liveVideo.iceServers} fallback={recorded} />
             ) : (

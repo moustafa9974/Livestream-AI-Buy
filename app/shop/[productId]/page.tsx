@@ -26,14 +26,14 @@ export default function ProductPage(props: PageProps<"/shop/[productId]">) {
     <>
       <DemoTour role="viewer" />
       <header className="border-b bg-card/85 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-2.5">
+        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8 py-2.5">
           <Logo />
           <span className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground">
             Checkout by <PayPalLogo className="h-3.5" />
           </span>
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6">
         <Suspense fallback={<p className="text-muted-foreground">Loading product…</p>}>
           <ProductContent params={props.params} searchParams={props.searchParams} />
         </Suspense>

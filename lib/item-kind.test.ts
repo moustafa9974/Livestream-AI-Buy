@@ -4,6 +4,8 @@ import { itemKind } from "./item-kind";
 describe("itemKind", () => {
   it("merges the AI's different names for one object", () => {
     expect(itemKind("laptop computer")).toBe(itemKind("black laptop computer"));
+    expect(itemKind("laptop computer")).toBe(itemKind("laptop")); // "computer" is generic
+    expect(itemKind("computer")).toBe("computer"); // all-generic label still has a kind
     expect(itemKind("computer mouse")).toBe(itemKind("black computer mouse"));
     expect(itemKind("white ceramic mug")).toBe("mug");
     expect(itemKind("Studio Over-Ear Headphones")).toBe("headphone");

@@ -21,7 +21,7 @@ const LABELS: Partial<Record<Feature, string>> = {
 
 export default function SettingsPage() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 sm:px-6 lg:px-8 py-8">
       <Suspense fallback={<p className="text-muted-foreground">Loading settings…</p>}>
         <Content />
       </Suspense>

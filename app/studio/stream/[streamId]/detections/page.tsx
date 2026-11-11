@@ -9,7 +9,7 @@ import { DetectionsGrid, type DetectionRow } from "./detections-grid";
 
 export default function DetectionsPage(props: PageProps<"/studio/stream/[streamId]/detections">) {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 px-4 sm:px-6 lg:px-8 py-8">
       <Suspense fallback={<p className="text-muted-foreground">Loading detections…</p>}>
         <Content params={props.params} />
       </Suspense>

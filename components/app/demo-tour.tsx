@@ -19,7 +19,7 @@ export function DemoTour({ role }: { role: "viewer" | "creator" }) {
 
   return (
     <div className="border-b bg-accent text-accent-foreground">
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-x-4 gap-y-2 px-4 py-2 text-sm">
+      <div className="mx-auto flex w-full max-w-[1600px] items-center gap-x-4 gap-y-2 px-4 sm:px-6 lg:px-8 py-2 text-sm">
         <p className="flex min-w-0 flex-1 items-center gap-2 truncate">
           {role === "viewer" ? (
             <>

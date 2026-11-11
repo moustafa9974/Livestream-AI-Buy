@@ -42,7 +42,7 @@ export default function Home() {
   return (
     <main className="flex flex-1 flex-col">
       <div className="hero-glow">
-        <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
+        <header className="mx-auto flex w-full max-w-[1400px] items-center justify-between px-4 sm:px-6 lg:px-8 py-5">
           <Logo />
           <nav className="flex items-center gap-1 text-sm">
             <Link href="/live/maya-makes" className="rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground">
@@ -54,7 +54,7 @@ export default function Home() {
           </nav>
         </header>
 
-        <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pb-20 pt-10 md:grid-cols-[1.05fr_1fr] md:pt-16">
+        <section className="mx-auto grid w-full max-w-[1400px] items-center gap-12 px-4 sm:px-6 lg:px-8 pb-20 pt-10 md:grid-cols-[1.05fr_1fr] md:pt-16">
           <div className="space-y-7">
             <p className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur">
               <span className="size-1.5 rounded-full bg-primary motion-safe:animate-pulse" aria-hidden />
@@ -94,7 +94,7 @@ export default function Home() {
 
       {/* Stats band: the pitch in four numbers. */}
       <section aria-label="Seen in numbers" className="border-y bg-card/60">
-        <dl className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-px overflow-hidden px-4 py-8 md:grid-cols-4">
+        <dl className="mx-auto grid w-full max-w-[1400px] grid-cols-2 gap-px overflow-hidden px-4 sm:px-6 lg:px-8 py-8 md:grid-cols-4">
           {STATS.map((s) => (
             <div key={s.value} className="px-2 py-3 text-center md:px-6">
               <dt className="sr-only">{s.label}</dt>
@@ -106,7 +106,7 @@ export default function Home() {
       </section>
 
       <section aria-labelledby="how" className="border-b bg-card">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16">
+        <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-8 py-16">
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">How it works</p>
           <h2 id="how" className="mt-2 text-3xl font-semibold">From frame to payout in three steps</h2>
           <ol className="mt-10 grid gap-6 md:grid-cols-3">
@@ -128,7 +128,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section aria-labelledby="try" className="mx-auto w-full max-w-6xl px-4 py-16">
+      <section aria-labelledby="try" className="mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-8 py-16">
         <p className="text-xs font-semibold uppercase tracking-wider text-primary">Try it in 3 minutes</p>
         <h2 id="try" className="mt-2 text-3xl font-semibold">Be the viewer first, then the creator</h2>
         <ol className="mt-10 grid gap-4 md:grid-cols-3">
@@ -153,7 +153,7 @@ export default function Home() {
       </section>
 
       <section aria-labelledby="why" className="border-t bg-card">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16">
+        <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <PayPalLogo className="h-9 md:h-10" />
           <span className="h-6 w-px bg-border" aria-hidden />
@@ -175,7 +175,7 @@ export default function Home() {
       </section>
 
       <footer className="mt-auto border-t bg-card">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 px-4 sm:px-6 lg:px-8 py-8 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
             <Logo />
             <p>Built for &quot;Build What&apos;s Next with PayPal and AI&quot;. Runs on free tiers.</p>

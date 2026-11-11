@@ -294,7 +294,9 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
 
         <div
           className={`stage-dots relative w-full overflow-hidden rounded-2xl shadow-lift ring-1 ring-black/5 ${live ? "outline-2 outline-offset-4 outline-live/25" : ""}`}
-          style={{ aspectRatio: aspect }}
+          // Width capped by window height so a wide screen keeps the controls in view; capping
+          // width (not height) keeps the exact aspect ratio, so AI boxes stay on the products.
+          style={{ aspectRatio: aspect, maxWidth: `calc(65vh * ${aspect})`, marginInline: "auto" }}
         >
           <video
             ref={videoRef}
