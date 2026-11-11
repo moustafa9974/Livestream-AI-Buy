@@ -72,10 +72,11 @@ async function seedCatalog() {
   });
 }
 
-async function seedCreatorAndStreams(now: Date) {
+async function seedCreatorAndStreams(now: Date, zapierWebhookUrl: string | null) {
   await prisma.creator.create({
     data: {
       id: CREATOR_ID,
+      zapierWebhookUrl,
       slug: "maya-makes",
       displayName: "Maya Makes",
       // Sandbox personal account that receives "Pay me now" payouts. Comes from .env so
@@ -363,9 +364,12 @@ export interface SeedResult {
 export async function seedDemo(client: PrismaClient): Promise<SeedResult> {
   prisma = client;
   const now = new Date();
+  // Settings the creator configured by hand survive a reset: wiping the Zapier hook
+  // would silently cut the creator's alerts every time the demo is restored.
+  const kept = await prisma.creator.findUnique({ where: { id: CREATOR_ID }, select: { zapierWebhookUrl: true } }).catch(() => null);
   await wipe();
   await seedCatalog();
-  await seedCreatorAndStreams(now);
+  await seedCreatorAndStreams(now, kept?.zapierWebhookUrl ?? null);
   await seedPastDetections();
   const similarLinks = await seedSimilarItems();
   await seedSales(now);
