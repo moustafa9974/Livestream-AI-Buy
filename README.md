@@ -4,11 +4,7 @@
 
 Seen is an AI that watches a creator's video or live stream and recognizes the products on screen. It pins one-tap **PayPal** buy buttons next to the video, and it pays the creator a commission through **PayPal Payouts**.
 
-**Live demo:** _coming soon (Render)_ · **Video:** _coming soon (YouTube)_ · Built for PayPal's **Build What's Next with PayPal and AI** hackathon.
-
-<!-- Hero GIF: docs/hero.gif (products popping onto the rail beside the video) -->
-
-> The live demo runs on Render's free tier and sleeps when idle. If the first load is slow, give it about 60 seconds; after that it's fast.
+**Demo video:** _YOUTUBE_LINK_ · **Run it yourself:** [5-minute setup](#for-judges-run-it-in-5-minutes) · Built for PayPal's **Build What's Next with PayPal and AI** hackathon.
 
 ## The problem
 
@@ -32,19 +28,56 @@ Video ─► frame sampler ─► dHash change filter ─► vision AI ─► tr
 
 Seen is the AI glue between the two.
 
-## Try it in 3 minutes
+## For judges: run it in 5 minutes
 
-No signup. You play both sides, in this order. A bar at the top of every page says who you are and what's next.
+You don't need any of our accounts or keys. Everything runs on your machine, and every service it uses has a free tier.
 
-1. **Shop as a viewer.** Click **Start the demo as a viewer**.
-   - You're watching creator **Maya Makes** (live, or a shoppable replay of her last stream).
-   - Tap a product → **Buy now** → pay with a sandbox PayPal account, or choose **Debit or Credit Card** and use a test card from PayPal's [sandbox card generator](https://developer.paypal.com/tools/sandbox/card-testing/).
-   - **No real money moves.** This is PayPal's sandbox, and no credentials are committed to this repo.
-2. **See Maya get paid.** After paying, click **See Maya Makes's side →**. You're now Maya, in her studio. Your sale and her 10% commission are at the top of **Earnings**. Click **Pay me now** to send it to her PayPal with PayPal Payouts.
-3. **Go live as Maya.**
-   - **Go live** → **Share screen / OBS** → tick consent → **Go live**, then share a tab showing a hoodie, a mug or a desk lamp.
-   - The AI spots the products, and they appear on the viewer page.
-   - Try **Ask Seen**: "How much did I earn this week?"
+**You need:** Node 22, and either Docker or a free [Neon](https://neon.com) Postgres database.
+
+```bash
+git clone https://github.com/moustafa9974/Livestream-AI-Buy.git
+cd Livestream-AI-Buy
+npm install
+cp .env.example .env     # works as is with Docker; for Neon, paste its URL into DATABASE_URL
+npm run db:up            # Postgres + pgvector in Docker (skip if you use Neon)
+npm run demo:reset       # creates the tables and the demo data
+npm run dev              # open http://localhost:3000
+```
+
+**What works with no keys at all:**
+- every page: the landing page, the creator studio, the viewer page, earnings, the brand-slot calendar and the recap;
+- **AI product detection on the bundled demo video.** Its AI results ship in the repo (`prisma/demo-vision-cache.json`), so you don't need a Gemini key;
+- products popping onto the viewer page live, and the past sales and commissions in Maya's earnings.
+
+Features whose key is missing show an "unavailable" chip; nothing crashes. `/api/health` lists what's on and why the rest is off.
+
+**To test real PayPal checkout and payouts (free, about 5 minutes):**
+1. Go to [developer.paypal.com](https://developer.paypal.com) → **Apps & Credentials** (Sandbox) → **Create App**, and copy the Client ID and Secret into `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` in `.env`.
+2. Under **Sandbox Accounts**, copy your sandbox *personal* account's email into `DEMO_CREATOR_PAYOUT_EMAIL`. That's who Maya's payouts go to. You log in with the same personal account to pay.
+3. Restart `npm run dev`. Full guide, including webhooks: [docs/PAYPAL_SANDBOX.md](docs/PAYPAL_SANDBOX.md).
+
+**Optional:** a free `GEMINI_API_KEY` from [AI Studio](https://aistudio.google.com) lets the AI watch any video or screen share, and turns on both assistants' full answers.
+
+## The demo flow
+
+A bar at the top of every page says who you are and what's next.
+
+1. **Go live as Maya.** Click **Skip to the creator's studio** → **Go live** → **Use demo video** → tick consent → **Go live**.
+   - Within seconds, the AI boxes the lamp, mug, laptop, mouse and rose, and lists them under **Detected products**.
+   - Keep this tab open: it's Maya's broadcast.
+2. **Shop as a viewer.** Open the **Viewer page**.
+   - Maya's video plays live, with every detected product beside it.
+   - Tap **Buy now** → pay with your sandbox PayPal account, or choose **Debit or Credit Card** and use a test card from PayPal's [sandbox card generator](https://developer.paypal.com/tools/sandbox/card-testing/).
+   - **No real money moves.** This is PayPal's sandbox.
+3. **See Maya get paid.** Open **Earnings**.
+   - The sale and Maya's 10% commission slide in live.
+   - Click **Pay me now** to send it to her with PayPal Payouts.
+4. **Ask the agents.**
+   - On the viewer page: **Ask about these products**, e.g. "Is the mug cheaper anywhere else?"
+   - In the studio: **Ask Seen**, e.g. "How much did I earn this week?"
+5. **Brand slots.** **Schedule** → drag across a future day → request a slot for a brand's product → approve it.
+
+Start over at any time with `npm run demo:reset`.
 
 ## Features
 
@@ -108,12 +141,12 @@ flowchart LR
 | **PayPal Agent Toolkit** | Read-only order/transaction lookups for the assistant | `lib/assistant/tools.ts` |
 | **Google Gemini** | Frame analysis, embeddings, assistant, recap | `lib/ai/` |
 | **Channel3** | Similar items + price comparison | `lib/channel3/` |
-| **Elastic** | Hybrid product search (BM25 + kNN) | `lib/search/elastic.ts` |
+| **Elastic** | Hybrid product search (BM25 + kNN); optional, with a Postgres + pgvector fallback | `lib/search/elastic.ts` |
 | **KERNEL** | Cloud browser watching a creator's own stream URL | `lib/kernel/watcher.ts` |
 | **Astropods** | Always-on stream-watcher agent | `astropods/` |
 | **Zapier** | Creator event automations | `lib/notify.ts` |
 | **AG Grid Community** | Earnings and detections grids | `components/grid/`, `app/studio/earnings` |
-| **Bryntum Calendar** (trial) | Stream and payout schedule | `app/studio/schedule` |
+| **Bryntum Calendar** (trial) | Brand-slot booking: drag to request, creator approves | `app/studio/schedule`, `lib/bookings*.ts` |
 | **Neon** | Serverless Postgres + pgvector | `prisma/` |
 | **Render** | Free hosting (Blueprint) | `render.yaml` |
 | **Postman** | API collection with tests | `postman/` |
@@ -206,11 +239,11 @@ npm run typecheck && npm run lint
 - **Platform integrations.** Native integrations with streaming platforms (today: upload, screen share, or KERNEL watching a public URL).
 - **Venmo** checkout for US viewers.
 - **Real-time audio** product mentions (Web Speech context exists behind `AUDIO_CONTEXT`).
-- **Brand marketplace.** Brands book a product feature slot in an upcoming stream.
+- **Paid brand slots.** Brand slots are booked and approved today; next, brands pay the creator's slot fee through PayPal when it's approved.
 
 ## Credits
 
-- **Demo video** (`public/demo/demo.mp4`): "Cozy workspace with warm lighting", from [Pexels](https://www.pexels.com/video/cozy-workspace-with-warm-lighting-39425743/), used under the [Pexels License](https://www.pexels.com/license/) (free to use, attribution not required). Hands only, no identifiable people. Seen's AI detects the mug, lamp, laptop and mouse in it; the cached results ship in `prisma/demo-vision-cache.json`, so the demo works with no AI quota.
+- **Demo video** (`public/demo/demo.mp4`): "Cozy workspace with warm lighting", from [Pexels](https://www.pexels.com/video/cozy-workspace-with-warm-lighting-39425743/), used under the [Pexels License](https://www.pexels.com/license/) (free to use, attribution not required). Hands only, no identifiable people. Seen's AI detects the lamp, mug, laptop, mouse and rose in it; the cached results ship in `prisma/demo-vision-cache.json`, so the demo works with no AI quota.
 - **PayPal logo**: PayPal's own wordmark, loaded unmodified from PayPal's CDN (the files of PayPal's open-source `@paypal/sdk-logos`). PayPal is a trademark of PayPal, Inc. and isn't covered by this project's license.
 
 ## License
