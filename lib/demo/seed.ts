@@ -115,6 +115,9 @@ async function seedCreatorAndStreams(now: Date, zapierWebhookUrl: string | null)
         title: "Live: what's on my desk this week",
         sourceType: "upload",
         videoAssetUrl: "/demo/demo.mp4",
+        // Faster sampling for the demo: products appear within seconds of going live.
+        // Unchanged frames are still skipped (dHash) and repeats come from the demo cache.
+        frameIntervalSec: 2,
         status: "idle",
         consentOwnContent: true,
         consentAt: now,

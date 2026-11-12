@@ -39,10 +39,10 @@ export async function matchDetection(
   }
   const text = `${d.label} ${d.category.replace(/\//g, " ")} ${Object.values(attributes).join(" ")}`;
 
-  const [{ backend, hits }, similar] = await Promise.all([
-    searchProducts({ text, embedding, limit: 10 }),
-    findSimilarItems(`${attributes.color ?? ""} ${d.label}`, 3),
-  ]);
+  // Channel3 (an outside API, up to a few seconds) runs alongside but doesn't hold up the
+  // Buy now card: the partner match is saved and pushed to viewers first.
+  const similarPromise = findSimilarItems(`${attributes.color ?? ""} ${d.label}`, 3).catch(() => []);
+  const { backend, hits } = await searchProducts({ text, embedding, limit: 10 });
 
   const products = await prisma.partnerProduct.findMany({ where: { id: { in: hits.map((h) => h.productId) } } });
   const byId = new Map(products.map((p) => [p.id, p]));
@@ -63,13 +63,22 @@ export async function matchDetection(
     if (kind && (!best || s.score > best.score)) best = { productId: p.id, score: s.score, kind };
   }
 
+  // 1) Partner match now: this is what gives viewers the Buy now card.
   await prisma.$transaction(async (tx) => {
-    await tx.productMatch.deleteMany({ where: { detectionId } });
+    await tx.productMatch.deleteMany({ where: { detectionId, source: "partner" } });
     if (best) {
       await tx.productMatch.create({
         data: { detectionId, source: "partner", partnerProductId: best.productId, score: best.score, kind: best.kind },
       });
     }
+    await tx.detection.update({ where: { id: detectionId }, data: { updatedAt: new Date() } });
+  });
+  emitRailChanged(d.streamId);
+
+  // 2) Open-web "similar items" when Channel3 answers (replacing any from a previous match).
+  const similar = await similarPromise;
+  await prisma.$transaction(async (tx) => {
+    await tx.productMatch.deleteMany({ where: { detectionId, source: "channel3" } });
     for (const [i, s] of similar.entries()) {
       await tx.productMatch.create({
         data: {
