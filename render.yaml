@@ -59,6 +59,6 @@ services:
       - key: WATCHER_TOKEN
         generateValue: true # shared secret for the Astropods watcher agent
       - key: ZAPIER_ENABLED
-        value: "false"
+        value: "true" # sale alerts to the creator's Zap (URL is saved in Studio → Settings)
       - key: BRYNTUM_ENABLED
-        value: "false"
+        value: "true" # brand-slot calendar (Bryntum trial from the CDN)
