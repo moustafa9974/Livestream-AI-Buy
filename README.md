@@ -4,7 +4,7 @@
 
 Seen is an AI that watches a creator's video or live stream and recognizes the products on screen. It pins one-tap **PayPal** buy buttons next to the video, and it pays the creator a commission through **PayPal Payouts**.
 
-**Demo video:** _YOUTUBE_LINK_ · **Run it yourself:** [5-minute setup](#for-judges-run-it-in-5-minutes) · Built for PayPal's **Build What's Next with PayPal and AI** hackathon.
+**Run it yourself:** [5-minute setup](#for-judges-run-it-in-5-minutes) · Built for PayPal's **Build What's Next with PayPal and AI** hackathon.
 
 ## The problem
 
