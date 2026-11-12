@@ -8,12 +8,13 @@ import { featureStatus } from "@/lib/flags";
 import { formatMoney } from "@/lib/money";
 import { getCurrentCreator } from "@/lib/session";
 import { EarningsTable, ProductsGrid } from "./earnings-table";
+import { LiveRefresh } from "./live-refresh";
 import { PayMeNow } from "./pay-me-now";
 
 // Earnings (SPEC §8): KPI tiles, Pay me now, per-product grid and sales ledger (AG Grid), timeline.
 export default function EarningsPage() {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-8 px-4 sm:px-6 lg:px-8 py-8">
       <Suspense fallback={<p className="text-muted-foreground">Loading earnings…</p>}>
         <EarningsContent />
       </Suspense>
@@ -43,13 +44,16 @@ async function EarningsContent() {
         title="Earnings"
         description={`When a viewer buys something they saw on your stream, the store is paid through PayPal and you earn ${creator.commissionRateBps / 100}% commission. Newest sales are at the top of the ledger. Pay me now sends what you have earned to your PayPal account with PayPal Payouts.`}
         actions={
-          <PayMeNow
-            payableMinor={data.kpis.payableNowMinor}
-            currency={data.currency}
-            openBatchId={data.openBatch}
-            unavailableReason={paypal.enabled ? null : paypal.reason ?? "PayPal unavailable"}
-            payoutEmail={creator.payoutEmail}
-          />
+          <>
+            <LiveRefresh />
+            <PayMeNow
+              payableMinor={data.kpis.payableNowMinor}
+              currency={data.currency}
+              openBatchId={data.openBatch}
+              unavailableReason={paypal.enabled ? null : paypal.reason ?? "PayPal unavailable"}
+              payoutEmail={creator.payoutEmail}
+            />
+          </>
         }
       />
 

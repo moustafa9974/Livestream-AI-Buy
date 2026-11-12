@@ -56,15 +56,15 @@ describe("matching → rail", () => {
   it("matches what the camera saw to the right partner product", async () => {
     const hoodie = await detection("black hooded sweatshirt", "apparel/hoodie", { color: "black" });
     const mic = await detection("wireless clip-on microphone", "electronics/microphone", { color: "black" });
-    const laptop = await detection("silver laptop", "electronics/laptop", { color: "silver" });
+    const bike = await detection("red road bicycle", "sports/bicycle", { color: "red" });
 
     expect(await matchDetection(hoodie.id)).toMatchObject({ kind: "exact", backend: "postgres" });
     expect((await matchDetection(mic.id)).kind).toBe("exact");
-    expect((await matchDetection(laptop.id)).kind).toBeNull(); // not in the catalog: no fake match
+    expect((await matchDetection(bike.id)).kind).toBeNull(); // no store sells bikes: no fake match
 
     const rail = await getRail(streamId);
     const byLabel = Object.fromEntries(rail.items.map((i) => [i.label, i.partner?.title ?? null]));
-    // The laptop isn't in any store we know: it stays off the viewer rail entirely.
+    // No store sells bicycles: it stays off the viewer rail entirely.
     expect(byLabel).toEqual({
       "black hooded sweatshirt": "Everyday Oversized Hoodie: Black",
       "wireless clip-on microphone": "Clip-On Wireless Mic Kit",

@@ -29,6 +29,7 @@ const productById = new Map(products.map((p) => [p.id, p]));
 async function wipe() {
   // Children first. One transaction so a failed reset never leaves half a demo.
   await prisma.$transaction([
+    prisma.brandBooking.deleteMany(),
     prisma.notification.deleteMany(),
     prisma.kernelSession.deleteMany(),
     prisma.auditEvent.deleteMany(),
@@ -71,10 +72,11 @@ async function seedCatalog() {
   });
 }
 
-async function seedCreatorAndStreams(now: Date) {
+async function seedCreatorAndStreams(now: Date, zapierWebhookUrl: string | null) {
   await prisma.creator.create({
     data: {
       id: CREATOR_ID,
+      zapierWebhookUrl,
       slug: "maya-makes",
       displayName: "Maya Makes",
       // Sandbox personal account that receives "Pay me now" payouts. Comes from .env so
@@ -95,7 +97,10 @@ async function seedCreatorAndStreams(now: Date) {
         creatorId: CREATOR_ID,
         title: "Desk setup tour + fall fits",
         sourceType: "upload",
-        videoAssetUrl: "/demo/demo.mp4",
+        // No video: this 42-minute replay's products (hoodie, sneakers, …) aren't in the
+        // short demo clip, so its stage shows the "AI scene" instead. The demo clip belongs
+        // to the live demo stream below, where Seen detects what's really in it.
+        videoAssetUrl: null,
         status: "ended",
         consentOwnContent: true,
         consentAt: pastStart,
@@ -110,6 +115,9 @@ async function seedCreatorAndStreams(now: Date) {
         title: "Live: what's on my desk this week",
         sourceType: "upload",
         videoAssetUrl: "/demo/demo.mp4",
+        // Faster sampling for the demo: products appear within seconds of going live.
+        // Unchanged frames are still skipped (dHash) and repeats come from the demo cache.
+        frameIntervalSec: 2,
         status: "idle",
         consentOwnContent: true,
         consentAt: now,
@@ -157,6 +165,42 @@ async function seedSimilarItems(): Promise<number> {
     }
   }
   return created;
+}
+
+/**
+ * Two brand slots relative to "now" (so they're always upcoming): one the creator already
+ * approved, one waiting, so the schedule shows the approve/decline flow straight away.
+ */
+async function seedBrandSlots(now: Date) {
+  const at = (days: number, hour: number) => {
+    const d = new Date(now.getTime() + days * 24 * HOUR);
+    d.setHours(hour, 0, 0, 0);
+    return d;
+  };
+  await prisma.brandBooking.createMany({
+    data: [
+      {
+        id: "seed_booking_kiln",
+        creatorId: CREATOR_ID,
+        merchantId: "seed_merchant_kiln",
+        productId: "seed_prod_ceramic_mug",
+        startsAt: at(3, 19),
+        endsAt: at(3, 20),
+        status: "APPROVED",
+        note: "Show the speckled glaze up close, please",
+      },
+      {
+        id: "seed_booking_signal",
+        creatorId: CREATOR_ID,
+        merchantId: "seed_merchant_signal",
+        productId: "seed_prod_wireless_mic",
+        startsAt: at(5, 20),
+        endsAt: at(5, 21),
+        status: "REQUESTED",
+        note: "Mention the 8-hour battery",
+      },
+    ],
+  });
 }
 
 /** Past-stream detections, one per demo item, each matched to its partner product. */
@@ -323,12 +367,16 @@ export interface SeedResult {
 export async function seedDemo(client: PrismaClient): Promise<SeedResult> {
   prisma = client;
   const now = new Date();
+  // Settings the creator configured by hand survive a reset: wiping the Zapier hook
+  // would silently cut the creator's alerts every time the demo is restored.
+  const kept = await prisma.creator.findUnique({ where: { id: CREATOR_ID }, select: { zapierWebhookUrl: true } }).catch(() => null);
   await wipe();
   await seedCatalog();
-  await seedCreatorAndStreams(now);
+  await seedCreatorAndStreams(now, kept?.zapierWebhookUrl ?? null);
   await seedPastDetections();
   const similarLinks = await seedSimilarItems();
   await seedSales(now);
+  await seedBrandSlots(now);
   const demoCacheFrames = await importDemoCache(prisma);
   // Product vectors for matching. Cached by text hash, so reseeding costs no quota;
   // without a Gemini key matching falls back to text scoring.

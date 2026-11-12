@@ -43,8 +43,6 @@ export function TickerPanel() {
   }, []);
 
   if (!t) return <section className="surface h-44 animate-pulse p-4 text-sm text-muted-foreground">Loading sales…</section>;
-  const quota = t.budget.limitPerDay ? `${t.budget.usedToday}/${t.budget.limitPerDay}` : `${t.budget.usedToday}`;
-  const pct = t.budget.limitPerDay ? Math.min(100, Math.round((t.budget.usedToday / t.budget.limitPerDay) * 100)) : 0;
 
   return (
     <section aria-label="Today" className="surface overflow-hidden">
@@ -74,18 +72,11 @@ export function TickerPanel() {
             </li>
           ))}
         </ul>
-        <div className="space-y-1.5 border-t pt-3">
-          <p className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-            <span>AI frames today: {quota}</span>
-            {t.budget.mode === "saver" && <Badge variant="secondary">Free-tier saver mode</Badge>}
-            {t.budget.mode === "cache_only" && <Badge variant="secondary">Quota used up: cache only</Badge>}
+        {t.budget.mode !== "normal" && (
+          <p className="border-t pt-3 text-xs text-muted-foreground">
+            <Badge variant="secondary">AI saver mode</Badge> Fewer frames are analysed to stay within the free AI tier.
           </p>
-          {t.budget.limitPerDay && (
-            <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-              <div className={`h-full rounded-full ${pct > 85 ? "bg-amber-500" : "bg-primary"}`} style={{ width: `${pct}%` }} />
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </section>
   );

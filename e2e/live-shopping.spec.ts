@@ -34,6 +34,15 @@ async function fakeScreenShare(page: Page) {
   }, dataUrl);
 }
 
+// Start (and finish) off air: a stream left live by another test shows "End stream"
+// instead of "Go live".
+test.beforeEach(async ({ request }) => {
+  await request.post("/api/streams/seed_stream_demo/live", { data: { action: "stop" } });
+});
+test.afterEach(async ({ request }) => {
+  await request.post("/api/streams/seed_stream_demo/live", { data: { action: "stop" } });
+});
+
 test("screen share of mugs becomes a buyable card for viewers", async ({ browser }) => {
   const creator = await browser.newPage();
   const viewer = await browser.newPage();
@@ -52,7 +61,6 @@ test("screen share of mugs becomes a buyable card for viewers", async ({ browser
   const card = viewer.getByRole("listitem").filter({ hasText: "Speckled Stoneware Mug" });
   await expect(card).toBeVisible({ timeout: 90_000 });
   console.log(`mug card visible ${((Date.now() - started) / 1000).toFixed(1)}s after Go live`);
-  console.log(`studio status: ${await creator.locator("p[aria-live=polite]").innerText()}`);
 
   // Checkout drawer opens and the PayPal JS SDK loads (paying needs a human login).
   await card.getByRole("button", { name: /^Buy / }).click();

@@ -1,6 +1,6 @@
 /**
- * Partner catalog seed data. The first six items (`demo: true`) are the ones that
- * appear in the self-recorded demo video, and their attributes describe what the
+ * Partner catalog seed data. The five items at the top match the bundled demo clip;
+ * the six marked `demo: true` are the seeded replay's products (and a self-recorded video), and their attributes describe what the
  * vision model will actually see on screen, which is what makes matching reliable.
  * Prices are integer cents.
  */
@@ -33,6 +33,60 @@ const S = "seed_merchant_signal";
 const K = "seed_merchant_kiln";
 
 export const products: SeedProduct[] = [
+  // ── Items in the bundled demo clip (public/demo/demo.mp4, Pexels "Cozy workspace") ──
+  // Attributes describe what the vision model reports for that clip, so every product it
+  // spots there has a partner product to match and a Buy now button.
+  {
+    id: "seed_prod_cube_lamp",
+    merchantId: K,
+    title: "Glow Cube Table Lamp",
+    description: "Frosted cube table lamp with a warm, dimmable glow. USB-C powered.",
+    category: "home/lighting",
+    priceMinor: 3900,
+    attributes: { color: "white", type: "table lamp", shape: "square cube", light: "warm" },
+    stock: 30,
+  },
+  {
+    id: "seed_prod_white_mug",
+    merchantId: K,
+    title: "Classic White Ceramic Mug",
+    description: "Glossy white 12oz ceramic mug with a comfortable handle. Dishwasher safe.",
+    category: "home/mug",
+    priceMinor: 1600,
+    attributes: { color: "white", material: "ceramic", capacity: "12oz" },
+    stock: 80,
+  },
+  {
+    id: "seed_prod_laptop",
+    merchantId: S,
+    title: "Creator 14-inch Laptop: Space Grey",
+    description: "Thin 14-inch laptop with a backlit keyboard and an all-day battery, built for editing on the go.",
+    category: "electronics/laptop",
+    priceMinor: 89900,
+    attributes: { color: "space grey black", type: "laptop computer", keyboard: "backlit" },
+    stock: 10,
+  },
+  {
+    id: "seed_prod_mouse",
+    merchantId: S,
+    title: "Wireless Silent Mouse: Black",
+    description: "Quiet-click wireless mouse with a 12-month battery and a USB receiver.",
+    category: "electronics/mouse",
+    priceMinor: 2900,
+    attributes: { color: "black", type: "wireless computer mouse" },
+    stock: 50,
+  },
+  {
+    id: "seed_prod_rose_dome",
+    merchantId: K,
+    title: "Preserved Rose in Glass Dome",
+    description: "A real preserved rose under a glass dome on a wooden base. Lasts for years.",
+    category: "home/decor",
+    priceMinor: 4500,
+    attributes: { color: "red pink", type: "preserved rose", material: "glass dome" },
+    stock: 20,
+  },
+
   // ── The six demo-video items ──
   {
     id: "seed_prod_black_hoodie",

@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ExternalLink, Pin, Play, Radio, ScanSearch, ShieldCheck, ShoppingBag, TrendingDown } from "lucide-react";
+import { ChevronRight, ExternalLink, Pin, ScanSearch, ShieldCheck, ShoppingBag, TrendingDown } from "lucide-react";
 import { LivePill } from "@/components/app/live-pill";
 import { LiveStage } from "@/components/live/live-stage";
+import { SceneFallback } from "@/components/live/scene-fallback";
+import { ShopperChat } from "@/components/live/shopper-chat";
 import type { IceServers } from "@/components/live/rtc";
 import { ProductThumb } from "@/components/app/product-thumb";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,6 @@ interface Props {
   video: VideoSource;
   initialRail: Rail;
   paypal: { clientId: string; env: "sandbox" | "live" } | null;
-  paypalUnavailableReason: string | null;
   /** Demo mode: one person plays viewer and creator, so checkout offers "see Maya's side". */
   demoMode: boolean;
   /** Real-time video from the creator's browser (WebRTC); null when the feature is off. */
@@ -29,7 +30,7 @@ interface Props {
 
 const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
 
-export function LiveViewer({ creator, stream, video, initialRail, paypal, paypalUnavailableReason, demoMode, liveVideo }: Props) {
+export function LiveViewer({ creator, stream, video, initialRail, paypal, demoMode, liveVideo }: Props) {
   const router = useRouter();
   const [wentLive, setWentLive] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -121,16 +122,7 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
           allowFullScreen
         />
       )}
-      {video.kind === "none" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center text-white">
-          <span className="grid size-12 place-items-center rounded-2xl bg-white/10 backdrop-blur" aria-hidden>
-            {isLive ? <Radio className="size-6" /> : <Play className="size-6" />}
-          </span>
-          <p className="max-w-sm text-sm text-white/80">
-            {isLive ? `${creator.name} is live. Products appear next to the video as they show up on screen.` : "Video coming soon."}
-          </p>
-        </div>
-      )}
+      {video.kind === "none" && <SceneFallback items={rail.items} live={isLive} creatorName={creator.name} />}
     </>
   );
 
@@ -182,14 +174,15 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
       )}
 
       {!paypal && (
-        <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-          PayPal checkout is unavailable ({paypalUnavailableReason}). You can still browse.
+        <p role="status" className="notice-warn p-3 text-sm">
+          Checkout is unavailable right now. You can still browse.
         </p>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_370px]">
         <section className="min-w-0 space-y-4">
-          <div className="stage-dots relative aspect-video w-full overflow-hidden rounded-2xl shadow-lift ring-1 ring-black/5">
+          {/* Width capped by window height (see the studio stage): exact 16:9, so highlight boxes line up. */}
+          <div className="stage-dots relative mx-auto aspect-video w-full overflow-hidden rounded-2xl shadow-lift ring-1 ring-black/5" style={{ maxWidth: "calc(70vh * 16 / 9)" }}>
             {isLive && liveVideo ? (
               <LiveStage creatorSlug={creator.slug} streamId={stream.id} iceServers={liveVideo.iceServers} fallback={recorded} />
             ) : (
@@ -245,6 +238,19 @@ export function LiveViewer({ creator, stream, video, initialRail, paypal, paypal
                   {rail.items.length} item{rail.items.length > 1 ? "s" : ""}
                 </span>
               )}
+            </div>
+            <div className="mb-3">
+              <ShopperChat
+                creatorSlug={creator.slug}
+                creatorName={creator.name}
+                streamId={stream.id}
+                canBuy={!!paypal}
+                onBuy={(detectionId) => {
+                  // Same path as a card's Buy button: attribution first, then the PayPal drawer.
+                  const item = rail.items.find((i) => i.detectionId === detectionId);
+                  if (item) void buy(item);
+                }}
+              />
             </div>
             {rail.items.length === 0 && (
               <div className="rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">
@@ -363,7 +369,7 @@ function RailCard({ item, canBuy, onBuy, productHref }: { item: RailItem; canBuy
           {/* PayPal's brand rules: PayPal-branded buttons come from the PayPal SDK (in the
               checkout drawer). Our own trigger stays neutral. */}
           <div className="space-y-1">
-            <Button onClick={onBuy} disabled={!canBuy} aria-label={`Buy ${p.title}`} className="h-10 w-full rounded-xl text-sm font-semibold">
+            <Button onClick={onBuy} disabled={!canBuy} aria-label={`Buy ${p.title}`} className="glow-cta h-10 w-full rounded-xl border-0 text-sm font-semibold text-white hover:brightness-110">
               {canBuy ? "Buy now" : "Checkout unavailable"}
             </Button>
             {canBuy && <p className="text-center text-[11px] text-muted-foreground">Pay with PayPal or card</p>}

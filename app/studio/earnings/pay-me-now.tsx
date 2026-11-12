@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { PayPalLogo } from "@/components/app/paypal-logo";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/money";
 
@@ -78,19 +79,22 @@ export function PayMeNow({ payableMinor, currency, openBatchId, unavailableReaso
   }
 
   if (unavailableReason) {
-    return <p className="text-sm text-muted-foreground">Payouts unavailable ({unavailableReason})</p>;
+    return <p className="text-sm text-muted-foreground">Payouts are unavailable right now.</p>;
   }
   return (
     <div className="flex items-center gap-3">
       {batchId && <span className="text-sm text-muted-foreground" role="status">Payout processing…</span>}
       <Button
         size="lg"
-        className="brand-bg h-10 border-0 px-4 text-white shadow-sm hover:brightness-110"
+        className="glow-cta h-10 border-0 px-4 text-white hover:brightness-110"
         onClick={pay}
         disabled={busy || !!batchId || payableMinor <= 0}
       >
         {busy ? "Sending…" : `Pay me now · ${formatMoney(payableMinor, currency)}`}
       </Button>
+      <span className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex">
+        Payouts by <PayPalLogo className="h-3.5" />
+      </span>
     </div>
   );
 }

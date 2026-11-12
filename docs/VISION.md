@@ -30,7 +30,13 @@
 | `ollama` | Free, local | `ollama pull gemma3:4b` (or `qwen2.5vl:7b`). Tested with gemma3:4b on CPU: correct items, but rough boxes and roughly 1 minute per frame. Use it as an offline fallback, not for live. |
 | `claude` | **Paid**, off by default | Needs `ANTHROPIC_API_KEY`. Uses the official SDK's structured outputs and server-side refusal fallback. |
 
-## Recording the demo video (you)
+## The demo video
+
+`public/demo/demo.mp4` is a 17-second, 720p Pexels clip ("Cozy workspace with warm lighting", Pexels License, hands only). In real Chrome with Gemini, Seen detects a white ceramic mug, a table lamp, a laptop, a computer mouse and a glass dome rose; the mug and lamp match partner products ("Similar"), the rest get Channel3 links. Its cached results are in `prisma/demo-vision-cache.json`.
+
+The seeded replay ("Desk setup tour") has no video on purpose: its six products aren't in this clip, so its stage shows the AI scene instead.
+
+## Recording your own demo video
 
 - 60–90 s, your own room, your own face is fine (the AI never identifies people). Avoid copyrighted music and logos in focus.
 - Show the 6 seeded items clearly, one at a time, each for 5–10 s: **black hoodie, wireless clip-on mic, speckled ceramic mug, black LED desk lamp, white low-top sneakers, round tortoiseshell sunglasses**. Hold each item still and centred, and say its name ("this mug…"). That helps the audio-context stretch feature later.

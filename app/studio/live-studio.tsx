@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
-import { Activity, CircleCheck, ExternalLink, Eye, EyeOff, Film, Globe, MonitorUp, Pencil, Pin, ScanSearch, Upload, type LucideIcon } from "lucide-react";
+import { CircleCheck, ExternalLink, Eye, EyeOff, Film, Globe, MonitorUp, Pencil, Pin, ScanSearch, Upload, type LucideIcon } from "lucide-react";
 import { LivePill } from "@/components/app/live-pill";
 import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -267,8 +267,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
           description="Go live and Seen's AI watches your video. Products it recognizes appear on your viewer page, ready to buy with PayPal. You never tag anything."
           actions={
             <>
-              {last?.mode === "saver" && <Badge variant="secondary">Free-tier saver mode</Badge>}
-              {last?.mode === "cache_only" && <Badge variant="secondary">Cache-only mode</Badge>}
+              {(last?.mode === "saver" || last?.mode === "cache_only") && <Badge variant="secondary">AI saver mode</Badge>}
               <LivePill live={live} />
               {live && liveVideo && (source === "screen" || source === "upload") && (
                 <Badge variant="secondary" title="Viewers watching your video in real time, browser to browser">
@@ -288,15 +287,16 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
         />
 
         {!ai.enabled && (
-          <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-            AI provider <b>{ai.provider}</b> unavailable ({ai.reason}).{" "}
-            {ai.demoCache ? "Cached demo results will still be used." : "Set DEMO_CACHE=true to use cached results."}
+          <p role="status" className="notice-warn p-3 text-sm">
+            The AI is unavailable right now.{ai.demoCache ? " Products from the demo video are still recognized." : ""}
           </p>
         )}
 
         <div
           className={`stage-dots relative w-full overflow-hidden rounded-2xl shadow-lift ring-1 ring-black/5 ${live ? "outline-2 outline-offset-4 outline-live/25" : ""}`}
-          style={{ aspectRatio: aspect }}
+          // Width capped by window height so a wide screen keeps the controls in view; capping
+          // width (not height) keeps the exact aspect ratio, so AI boxes stay on the products.
+          style={{ aspectRatio: aspect, maxWidth: `calc(65vh * ${aspect})`, marginInline: "auto" }}
         >
           <video
             ref={videoRef}
@@ -319,14 +319,15 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
               className="pointer-events-none absolute rounded-lg border-2 border-white shadow-[0_0_0_3px_oklch(0.53_0.23_286/0.45)] motion-safe:transition-all"
               style={{ left: `${d.bbox![0] * 100}%`, top: `${d.bbox![1] * 100}%`, width: `${d.bbox![2] * 100}%`, height: `${d.bbox![3] * 100}%` }}
             >
-              <span className="absolute -top-7 left-0 whitespace-nowrap rounded-md bg-white px-2 py-0.5 text-xs font-medium text-foreground shadow">
+              <span className="absolute -top-7 left-0 whitespace-nowrap rounded-md bg-white px-2 py-0.5 text-xs font-medium text-neutral-900 shadow">
                 {d.label}
               </span>
             </div>
           ))}
           {!source && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center text-white">
-              <span className="grid size-12 place-items-center rounded-2xl bg-white/10 backdrop-blur" aria-hidden>
+              <div aria-hidden className="hero-scan pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-transparent via-[oklch(0.74_0.16_225/0.14)] to-transparent" />
+              <span className="glass relative grid size-14 place-items-center rounded-2xl shadow-[0_0_30px_oklch(0.6_0.25_300/0.45)]" aria-hidden>
                 <ScanSearch className="size-6" />
               </span>
               <p className="font-medium">Pick a source below to start</p>
@@ -395,7 +396,7 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
                 </div>
               )
             ) : (
-              <p className="text-xs text-muted-foreground">KERNEL unavailable ({kernel.reason}). Screen sharing and uploads still work.</p>
+              <p className="text-xs text-muted-foreground">Watching a stream URL isn&apos;t available right now. Screen sharing and uploads still work.</p>
             )}
             <p className="text-xs text-muted-foreground">Only your own channel. Capped per session and per day to protect credits; stops when the stream ends.</p>
           </div>
@@ -425,22 +426,16 @@ export function LiveStudio({ stream, initialDetections, creatorName, creatorSlug
         </section>
 
         {live && last?.note && (
-          <p role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          <p role="alert" className="notice-warn p-3 text-sm">
             {last.note}
           </p>
         )}
-        {live && source === "screen" && (
-          <p className="text-xs text-muted-foreground">
-            Tip: share the window or tab with your products in it. Sampling keeps running while you switch tabs.
+        {/* Only problems are worth the creator's attention; frame counters were debug output. */}
+        {live && sampler.error && (
+          <p role="alert" className="notice-warn p-3 text-sm">
+            Seen couldn&apos;t send the last frame. It will keep trying.
           </p>
         )}
-        <p className="text-xs text-muted-foreground" aria-live="polite">
-          <Activity className="me-1.5 inline size-3.5 align-[-2px]" aria-hidden />
-          Frames sent {sampler.sent} · skipped (unchanged) {sampler.skipped}
-          {last && <> · last: {last.source}{last.provider ? ` (${last.provider})` : ""}, {last.itemsSeen} items, {last.latencyMs} ms (lookup {last.timings.lookupMs} · AI {last.timings.aiMs} · tracker {last.timings.trackerMs})</>}
-          {last?.note && <> · {last.note}</>}
-          {sampler.error && <span className="text-destructive"> · {sampler.error}</span>}
-        </p>
       </section>
 
       <aside className="space-y-4">

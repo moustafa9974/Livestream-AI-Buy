@@ -56,8 +56,11 @@ No signup. You play both sides, in this order. A bar at the top of every page sa
 - A product page for every item: seller, details, PayPal trust lines and **Buy now** (still credits the creator). Plus real "also sold online" store links from Channel3, clearly marked as leaving Seen.
 - Attribution from the exact on-screen moment to the order, the commission and the creator.
 - Commission ledger with a hold window, refunds and reversals, and **Pay me now** via PayPal Payouts with live status.
+- **Live earnings (AG Grid):** while Maya watches her earnings, a new sale slides in and glows, changed cells flash (eligible → paid, refunds), and a pinned totals row keeps up. No reload.
 - Verified, idempotent PayPal webhooks and a full audit timeline for every money event.
+- **Viewer shopping agent (agentic commerce):** viewers ask "what's on screen?", "is the mug cheaper elsewhere?" or "buy the mug". It finds the product, compares real prices, and prepares a PayPal checkout. It never pays by itself: the viewer approves in PayPal, and prices come from the database.
 - Creator assistant: Gemini with tools plus the PayPal Agent Toolkit for read-only lookups. It still answers common questions when the AI is out of quota.
+- **Brand slots (Bryntum):** partner stores request a time slot to have a product featured on the creator's stream. Drag on the calendar to request one; the creator approves or declines. Validated on the server: future only, max 3 h, no overlaps, brand must sell the product.
 - Shareable AI stream recap page.
 - Zapier events (sale, payout, recap) with an in-app notification center as the fallback.
 - A "Watch my stream URL" source: a KERNEL cloud browser, optionally driven by an Astropods agent.
@@ -125,13 +128,13 @@ How each one is used, and what happens when it's off: [docs/SPONSORS.md](docs/SP
 | Gemini Flash-Lite (vision), with fallback models | Finds products in frames: label, category, attributes, bounding box, prominence, confidence | Structured output with a JSON schema; validated with zod; one "fix your JSON" retry |
 | OpenRouter free vision models | Backup when Gemini is busy or out of quota | Same schema and guardrails |
 | Gemini embeddings | Dedupe detections; match them to products | Cached by text hash; stored in pgvector |
-| Gemini Flash-Lite (text) | Creator assistant (tool calling), stream recap headline | Tools are scoped to the signed-in creator |
+| Gemini Flash-Lite (text) | Creator assistant and viewer shopping agent (tool calling), stream recap headline | Tools are scoped server-side: the creator's own data, or the stream the viewer is watching |
 | Ollama (local) / Claude (paid, off) | Optional providers | `AI_PROVIDER=ollama \| claude` |
 
 **Guardrails (enforced in code, not just in the prompt):**
 - **The AI never sets prices, totals, commission rates or payout amounts.** These come from the database, computed server-side in integer minor units.
 - **Prompt injection.** Text visible in a frame (e.g. a sign saying "ignore your instructions") is treated as data.
-- **Payment actions.** The assistant's payout and refund actions run only when the creator's own latest message asks for them.
+- **Payment actions.** The creator assistant's payout and refund actions run only when the creator's own latest message asks for them. The viewer agent can only *offer* a Buy button, only after the viewer asks to buy, and only for a product on that stream; the viewer still approves in PayPal. It refuses discounts.
 - **Safety filters.** A category denylist (weapons, drugs, adult content), confidence thresholds and a per-stream cap on visible products.
 
 **Privacy:**
@@ -204,6 +207,11 @@ npm run typecheck && npm run lint
 - **Venmo** checkout for US viewers.
 - **Real-time audio** product mentions (Web Speech context exists behind `AUDIO_CONTEXT`).
 - **Brand marketplace.** Brands book a product feature slot in an upcoming stream.
+
+## Credits
+
+- **Demo video** (`public/demo/demo.mp4`): "Cozy workspace with warm lighting", from [Pexels](https://www.pexels.com/video/cozy-workspace-with-warm-lighting-39425743/), used under the [Pexels License](https://www.pexels.com/license/) (free to use, attribution not required). Hands only, no identifiable people. Seen's AI detects the mug, lamp, laptop and mouse in it; the cached results ship in `prisma/demo-vision-cache.json`, so the demo works with no AI quota.
+- **PayPal logo**: PayPal's own wordmark, loaded unmodified from PayPal's CDN (the files of PayPal's open-source `@paypal/sdk-logos`). PayPal is a trademark of PayPal, Inc. and isn't covered by this project's license.
 
 ## License
 

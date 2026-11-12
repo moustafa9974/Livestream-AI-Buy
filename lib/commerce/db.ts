@@ -23,7 +23,7 @@ export async function lockRow(
 }
 
 export interface AuditInput {
-  entityType: "Order" | "Commission" | "PayoutBatch" | "Refund" | "WebhookEvent" | "Attribution" | "Detection" | "Stream";
+  entityType: "Order" | "Commission" | "PayoutBatch" | "Refund" | "WebhookEvent" | "Attribution" | "Detection" | "Stream" | "BrandBooking";
   entityId: string;
   type: string;
   source: AuditSource;

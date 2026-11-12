@@ -185,6 +185,8 @@ The handshake lives in memory for a few seconds (`lib/realtime/webrtc.ts`), like
 | `lib/ai/`, `lib/vision/` | Providers, schema, guardrails, dHash, tracker, cache |
 | `lib/search/`, `lib/matching/`, `lib/channel3/` | Product search and matching |
 | `lib/assistant/` | Creator assistant (Gemini tools + PayPal Agent Toolkit, read-only) |
+| `lib/shopper/`, `components/live/shopper-chat.tsx` | Viewer shopping agent: stream-scoped tools, buy-intent gate, no-AI fallback, per-viewer limit |
 | `lib/kernel/`, `astropods/` | Stream-URL watcher |
+| `lib/bookings.ts`, `lib/bookings-rules.ts`, `app/studio/schedule` | Brand slots on the Bryntum schedule: rules, status changes, API |
 | `lib/budget.ts`, `lib/flags.ts`, `lib/settings.ts` | Quota guard, feature flags, runtime overrides |
 | `prisma/` | Schema, migrations, seed |

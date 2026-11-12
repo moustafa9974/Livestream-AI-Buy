@@ -23,7 +23,8 @@
     "catalog:embed": "tsx -e \"import('./lib/search/catalog.ts').then(m=>m.embedCatalog()).then(r=>{console.log(r);process.exit(0)})\"",
     "search:index": "tsx scripts/search-index.ts",
     "test:e2e": "playwright test",
-    "start:prod": "prisma migrate deploy && next start"
+    "start:prod": "prisma migrate deploy && next start",
+    "film": "npm run build && npm run demo:reset && next start"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.1",

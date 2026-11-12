@@ -82,8 +82,8 @@ const schema = z.object({
   DETECTION_MIN_CONFIDENCE: z.coerce.number().min(0).max(1).default(0.55),
   MAX_VISIBLE_PRODUCTS: int(12),
   // Featured, high-confidence items show on first sighting (see lib/vision/tracker.ts). >1 disables.
-  DETECTION_FAST_LANE_CONFIDENCE: z.coerce.number().min(0).default(0.9),
-  DETECTION_FAST_LANE_PROMINENCE: z.coerce.number().min(0).max(1).default(0.6),
+  DETECTION_FAST_LANE_CONFIDENCE: z.coerce.number().min(0).default(0.85),
+  DETECTION_FAST_LANE_PROMINENCE: z.coerce.number().min(0).max(1).default(0.3),
   // Match thresholds, calibrated 2026-10-10 on real Gemini embeddings (true ≥0.89, decoys ≤0.69).
   MATCH_EXACT_SCORE: z.coerce.number().min(0).max(1).default(0.85),
   MATCH_SIMILAR_SCORE: z.coerce.number().min(0).max(1).default(0.7),

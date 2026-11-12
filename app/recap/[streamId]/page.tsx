@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Stream recap" };
 /** Public, shareable stream recap (SPEC §8): the marketing asset. */
 export default function RecapPage(props: PageProps<"/recap/[streamId]">) {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-12">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 sm:px-6 lg:px-8 py-12">
       <Suspense fallback={<p className="text-muted-foreground">Loading recap…</p>}>
         <Content params={props.params} />
       </Suspense>

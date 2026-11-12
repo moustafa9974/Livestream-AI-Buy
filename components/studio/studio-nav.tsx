@@ -42,7 +42,7 @@ export function StudioNav() {
 
   return (
     <header className="sticky top-0 z-30 border-b bg-card/85 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center gap-x-6 gap-y-2 px-4 sm:px-6 lg:px-8 py-2.5">
         <Logo suffix="Creator Studio" />
         <nav aria-label="Studio" className="-mx-1 flex flex-1 gap-0.5 overflow-x-auto text-sm">
           {LINKS.map((l) => {
